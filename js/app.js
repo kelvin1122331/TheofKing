@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=18';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=18';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=18';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=18';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=18';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=18';
-import { Game } from './game.js?v=18';
-import { preloadPieces } from './pieces.js?v=18';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=18';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=18';
-import { SKINS, skinById, applySkin } from './skins.js?v=18';
-import { BORDERS, AVATARS, borderById, avatarById, avatarImg } from './cosmetics.js?v=18';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=19';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=19';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=19';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML } from './ui.js?v=19';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=19';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=19';
+import { Game } from './game.js?v=19';
+import { preloadPieces } from './pieces.js?v=19';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=19';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=19';
+import { SKINS, skinById, applySkin } from './skins.js?v=19';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=19';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -101,7 +101,7 @@ function renderChip() {
   if (!p) { chip.innerHTML = '👤 Masuk'; updateFriendsBadge(); return; }
   const r = rankForStars(store.stats.stars);
   chip.innerHTML = `${avatarHTML(p, 32)}
-    <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${esc(p.name)}</span>
+    <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${nickHTML(p.name, p.nickFx)}</span>
     <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span>
     <span class="pcoins" title="Koin — klik untuk buka Shop">🪙 <b id="coin-balance">${store.stats.coins || 0}</b></span></span>`;
   updateFriendsBadge();
@@ -386,7 +386,7 @@ function paintLeaderboard(rows, meRank) {
     <div class="lb-row ${r.me ? 'me' : ''}" data-lbi="${i}" style="cursor:pointer" title="Lihat profil">
       <span class="pos">${medal(r.pos)}</span>
       ${avatarHTML(r, 40)}
-      <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${esc(r.name)}${r.me ? ' (Kamu)' : ''}</span><br>
+      <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${nickHTML(r.name, r.nickFx)}${r.me ? ' (Kamu)' : ''}</span><br>
       <span class="u">@${esc(r.username)} • ${r.rank.icon} ${r.rank.name}</span></span>
       <span class="score">${lbTab === 'stars' ? '⭐ ' + r.stars : '🔥 ' + r.streak}</span>
       <span class="lb-likes">❤️ ${r.likes || 0}</span>
@@ -405,7 +405,7 @@ function renderLeaderboard() {
       paintLeaderboard(lb.players.map((x, i) => ({
         id: x.id, name: x.name, username: x.username, avatar: x.avatar, bot: false,
         me: !!myId && x.id === myId, country: x.country || null, avatarBorder: x.avatarBorder || null,
-        stars: x.stars, streak: x.streak, likes: x.likes || 0, rank: rankForStars(x.stars), pos: i + 1,
+        stars: x.stars, streak: x.streak, likes: x.likes || 0, nickFx: x.nickFx || 'none', rank: rankForStars(x.stars), pos: i + 1,
       })), lb.meRank);
     }).catch(() => { /* tetap tampilkan lokal */ });
   }
@@ -623,13 +623,14 @@ async function pullAccount() {
 }
 
 function applyServerAccount(a) {
-  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, createdAt: store.profile?.createdAt || Date.now() };
+  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, nickFx: a.nickFx || 'none', createdAt: store.profile?.createdAt || Date.now() };
   store.stats = { ...a.stats, _rev: a.rev || 0 };
   const s = store.settings;
   if (a.settings?.skin) s.skin = a.settings.skin;
   if (Array.isArray(a.settings?.skins)) s.skins = a.settings.skins;
   if (Array.isArray(a.settings?.borders)) s.borders = a.settings.borders;
   if (Array.isArray(a.settings?.avatars)) s.avatars = a.settings.avatars;
+  if (Array.isArray(a.settings?.nickfx)) s.nickfx = a.settings.nickfx;
   store.settings = s;
   store.friends = Array.isArray(a.friends) ? a.friends : [];
   refreshStats();
@@ -652,9 +653,9 @@ async function pushAccount() {
     const rev = (st._rev || 0) + 1;
     const set = store.settings;
     const { account } = await Server.push(p.id, {
-      profile: { name: p.name, username: p.username, avatar: p.avatar, country: p.country, avatarBorder: p.avatarBorder || null },
+      profile: { name: p.name, username: p.username, avatar: p.avatar, country: p.country, avatarBorder: p.avatarBorder || null, nickFx: p.nickFx || 'none' },
       stats: { ...st },
-      settings: { skin: set.skin, skins: set.skins, borders: set.borders, avatars: set.avatars },
+      settings: { skin: set.skin, skins: set.skins, borders: set.borders, avatars: set.avatars, nickfx: set.nickfx },
       friends: store.friends,
       rev,
     });
@@ -1153,7 +1154,7 @@ async function startOnlineGame() {
     isHost: lobby.isHost,
   };
   // sematkan bintang lawan untuk tampilan
-  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0, skin: oppEntry.stats?.skin || 'wood', likes: oppEntry.stats?.likes || 0 };
+  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0, skin: oppEntry.stats?.skin || 'wood', likes: oppEntry.stats?.likes || 0, nickFx: oppEntry.profile?.nickFx || 'none' };
   net.onData = (msg) => (game ? game.onNetMessage(msg) : onLobbyNetData(msg));
   net.onClose = () => {
     if (!game) {
@@ -1318,7 +1319,7 @@ function rowFromAccount(a) {
     id: a.id, name: a.name, username: a.username, avatar: a.avatar || null,
     avatarBorder: a.avatarBorder || null, bot: false, me: isMe,
     country: a.country || null, stars: st.stars || 0, streak: st.streak || 0,
-    likes: a.likes || 0, rank: rankForStars(st.stars || 0),
+    likes: a.likes || 0, nickFx: a.nickFx || 'none', rank: rankForStars(st.stars || 0),
     pos: isMe ? (myGlobalRank('stars') || null) : null,
   };
 }
@@ -1344,7 +1345,7 @@ function openPlayerModal(row) {
   document.getElementById('player-body').innerHTML = `
     <div class="pm-wrap">
       <div class="pm-face">${avatarHTML(row, 76)}</div>
-      <h2 class="pm-name">${esc(row.name || '–')}</h2>
+      <h2 class="pm-name">${nickHTML(row.name, row.nickFx)}</h2>
       <div class="pm-sub">${row.username ? '@' + esc(row.username) + ' • ' : ''}${esc(row.id || '')}${isMe ? ' • <b>Ini kamu</b>' : ''}${row.bot ? ' • 🤖 Bot' : ''}</div>
       <div class="pm-rank">${rk.icon} ${esc(rk.name)}</div>
       <div class="pm-grid">
@@ -1398,7 +1399,7 @@ function openMatchModal(r) {
     return `<div class="mm-side">
       <div class="mm-tag">${tag}</div>
       <div class="mm-face">${avatarHTML(p, 60)}</div>
-      <div class="mm-name">${esc(p.name || '–')}</div>
+      <div class="mm-name">${nickHTML(p.name, p.nickFx)}</div>
       <div class="mm-sub">${p.country ? esc(flagEmoji(p.country) + ' ' + (cc ? cc.name : p.country)) : '–'}</div>
       <div class="mm-stats">⭐ ${p.stars == null ? '–' : p.stars} &nbsp; ❤️ ${p.likes == null ? '–' : p.likes}</div>
     </div>`;
@@ -1409,7 +1410,7 @@ function openMatchModal(r) {
     <div class="mm-vs">
       ${side('KAMU', { ...me, stars: st.stars || 0, likes: st.likes || 0 })}
       <div class="mm-x">VS</div>
-      ${side('LAWAN', { avatar: o.avatar || null, avatarBorder: o.avatarBorder || null, name: o.name || 'Lawan', username: o.username || '', country: o.country || null, stars: (typeof o.stars === 'number' ? o.stars : null), likes: (typeof o.likes === 'number' ? o.likes : null) })}
+      ${side('LAWAN', { avatar: o.avatar || null, avatarBorder: o.avatarBorder || null, name: o.name || 'Lawan', username: o.username || '', nickFx: o.nickFx || 'none', country: o.country || null, stars: (typeof o.stars === 'number' ? o.stars : null), likes: (typeof o.likes === 'number' ? o.likes : null) })}
     </div>`;
   openModal('modal-match');
 }
@@ -1769,6 +1770,7 @@ function renderShop() {
   paintShopTabs();
   renderBordersGrid();
   renderAvatarsGrid();
+  renderNickFxGrid();
 }
 
 let shopTab = 'prot';
@@ -1778,7 +1780,7 @@ function paintShopTabs() {
     t.classList.toggle('active', t.dataset.shopTab === shopTab);
     t.onclick = () => { shopTab = t.dataset.shopTab; sfx.click(); paintShopTabs(); };
   });
-  for (const id of ['prot', 'skins', 'borders', 'avatars']) {
+  for (const id of ['prot', 'skins', 'borders', 'avatars', 'nickfx']) {
     document.getElementById('shop-pane-' + id).hidden = shopTab !== id;
   }
 }
@@ -1804,6 +1806,64 @@ function equippedBorder() {
 function equippedAvatarId() {
   const av = currentProfile()?.avatar;
   return av?.type === 'premium' ? av.data : null;
+}
+
+function ownedNickFx() {
+  const s = store.settings.nickfx;
+  const known = new Set(NICKFX.map((x) => x.id));
+  const arr = Array.isArray(s) ? s.filter((id) => known.has(id)) : [];
+  return [...new Set(['none', ...arr])];
+}
+
+function equippedNickFx() {
+  return currentProfile()?.nickFx || 'none';
+}
+
+function renderNickFxGrid() {
+  const coins = store.stats.coins || 0;
+  const eq = equippedNickFx();
+  const owned = ownedNickFx();
+  const grid = document.getElementById('nickfx-grid');
+  grid.innerHTML = NICKFX.map((x) => {
+    const has = owned.includes(x.id);
+    const isEq = eq === x.id;
+    const prev = x.id === 'rainbow'
+      ? '<span class="nick-rainbow" style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>'
+      : '<span style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>';
+    return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
+      <div class="cos-prev">${prev}</div>
+      <div class="skin-name">${x.emoji} ${esc(x.name)}</div>
+      <div class="skin-desc">${esc(x.desc)}</div>
+      ${cosButton('nickfx', x, has, isEq, coins)}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-buy-nickfx]').forEach((x) => { x.onclick = () => buyNickFx(x.dataset.buyNickfx); });
+  grid.querySelectorAll('[data-eq-nickfx]').forEach((x) => { x.onclick = () => equipNickFx(x.dataset.eqNickfx); });
+}
+
+function buyNickFx(id) {
+  const x = nickFxById(id);
+  if (!x) return;
+  const cur = store.stats;
+  if ((cur.coins || 0) < x.price) { toast('Koin kurang! Menangkan game untuk dapat \U0001FA99', 'error'); sfx.illegal(); return; }
+  cur.coins -= x.price;
+  saveStats(cur);
+  const st = store.settings;
+  st.nickfx = [...new Set([...ownedNickFx(), id])];
+  store.settings = st;
+  sfx.buy();
+  equipNickFx(id, true);
+}
+
+function equipNickFx(id, fromBuy = false) {
+  if (!nickFxById(id) || !ownedNickFx().includes(id)) return;
+  const p = store.profile || {};
+  p.nickFx = id;
+  store.profile = p;
+  sfx.buy();
+  toast(fromBuy ? `\U0001F308 Efek ${nickFxById(id).name} dibeli & dipakai!` : `\U0001F308 Efek ${nickFxById(id).name} dipakai!`, 'success');
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  renderShop();
 }
 
 function cosButton(kind, item, has, isEq, coins) {

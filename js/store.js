@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=18';
+import { rankForStars } from './ranks.js?v=19';
 
 const PREFIX = 'tok.v1.';
 
@@ -118,6 +118,7 @@ export function getLeaderboard(by = 'stars') {
     country: s.country || null,
     stars: s.stars, streak: s.streak,
     likes: 0,
+    nickFx: 'none',
     rank: rankForStars(s.stars),
   }));
   if (profile) {
@@ -127,6 +128,7 @@ export function getLeaderboard(by = 'stars') {
       country: profile.country || null,
       stars: stats.stars || 0, streak: stats.streak || 0,
       likes: stats.likes || 0,
+      nickFx: profile.nickFx || 'none',
       rank: rankForStars(stats.stars || 0),
     });
   }

@@ -966,3 +966,20 @@ body { touch-action: manipulation; }
 .mm-stats { font-size: 0.85rem; }
 .mm-x { align-self: center; font-weight: 800; color: var(--gold); }
 .lb-likes { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+
+/* ---------- bingkai baru ---------- */
+.ava-border-frost { background: linear-gradient(135deg, #e0f7ff, #38bdf8 55%, #0c4a6e); box-shadow: 0 0 12px rgba(125, 211, 252, 0.9); }
+.ava-border-shadow { background: linear-gradient(135deg, #4c1d95, #12081f 60%, #000); box-shadow: 0 0 12px rgba(76, 29, 149, 0.9); }
+.ava-border-blood { background: linear-gradient(135deg, #ff8a8a, #dc2626 50%, #450a0a); box-shadow: 0 0 12px rgba(220, 38, 38, 0.9); }
+.ava-border-emerald { background: linear-gradient(135deg, #a7f3d0, #10b981 55%, #064e3b); box-shadow: 0 0 12px rgba(16, 185, 129, 0.85); }
+.ava-border-storm { background: linear-gradient(135deg, #fefce8, #facc15 55%, #713f12); box-shadow: 0 0 14px rgba(250, 204, 21, 0.95); }
+.ava-border-galaxy { background: linear-gradient(135deg, #1e1b4b, #7c3aed 45%, #ec4899 75%, #1e1b4b); box-shadow: 0 0 12px rgba(139, 92, 246, 0.9); }
+/* ---------- efek nickname ---------- */
+.nick-rainbow {
+  background: linear-gradient(90deg, #ff4d4d, #ff9f1c, #ffe93c, #4dff88, #4dd2ff, #8b5cf6, #ff4dd2, #ff4d4d);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-weight: 800;
+  animation: nickfx-flow 3s linear infinite;
+}
+@keyframes nickfx-flow { to { background-position: 300% 0; } }

@@ -2,19 +2,19 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=18';
-import { Board } from './board.js?v=18';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=18';
-import { sfx } from './sound.js?v=18';
-import { store, saveStats, pushRecent } from './store.js?v=18';
-import { applyResult, rankForStars } from './ranks.js?v=18';
+import { Chess } from './vendor/chess.js?v=19';
+import { Board } from './board.js?v=19';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=19';
+import { sfx } from './sound.js?v=19';
+import { store, saveStats, pushRecent } from './store.js?v=19';
+import { applyResult, rankForStars } from './ranks.js?v=19';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog,
-} from './ui.js?v=18';
-import { pieceSrc } from './pieces.js?v=18';
-import { flagFor } from './countries.js?v=18';
-import { applySkin, skinById } from './skins.js?v=18';
+} from './ui.js?v=19';
+import { pieceSrc } from './pieces.js?v=19';
+import { flagFor } from './countries.js?v=19';
+import { applySkin, skinById } from './skins.js?v=19';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -888,6 +888,7 @@ function oppSnapshot(p) {
   if (p.avatar) o.avatar = p.avatar;
   if (p.avatarBorder) o.avatarBorder = p.avatarBorder;
   if (p.country) o.country = p.country;
+  if (p.nickFx) o.nickFx = p.nickFx;
   if (typeof p.stars === 'number') o.stars = p.stars;
   if (typeof p.likes === 'number') o.likes = p.likes;
   return o;

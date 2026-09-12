@@ -6,11 +6,17 @@
 export const BORDERS = [
   { id: 'none',    name: 'Tanpa Bingkai',  desc: 'Polos bawaan',          price: 0 },
   { id: 'gold',    name: 'Emas Mulia',     desc: 'Lingkaran emas mewah',  price: 50 },
+  { id: 'frost',   name: 'Es Beku',        desc: 'Biru es berkilau',      price: 60 },
   { id: 'ocean',   name: 'Samudra',        desc: 'Biru laut berkilau',    price: 75 },
   { id: 'neon',    name: 'Neon Cyber',     desc: 'Cahaya neon terang',    price: 80 },
+  { id: 'shadow',  name: 'Bayangan',       desc: 'Ungu gelap misterius',  price: 90 },
   { id: 'fire',    name: 'Api Membara',    desc: 'Bara api menyala',      price: 100 },
+  { id: 'blood',   name: 'Darah',          desc: 'Merah darah menyala',   price: 110 },
   { id: 'rainbow', name: 'Pelangi',        desc: 'Warna-warni berdenyut', price: 120 },
+  { id: 'emerald', name: 'Zamrud',         desc: 'Hijau permata mewah',   price: 130 },
+  { id: 'storm',   name: 'Petir',          desc: 'Kuning elektrik',       price: 140 },
   { id: 'royal',   name: 'Mahkota Raja',   desc: 'Ungu + emas bangsawan', price: 150 },
+  { id: 'galaxy',  name: 'Galaksi',        desc: 'Antariksa berbintang',  price: 175 },
 ];
 
 export const AVATARS = [
@@ -34,4 +40,13 @@ export function avatarById(id) {
 
 export function avatarImg(id) {
   return `assets/avatars/${id}.png`;
+}
+
+export const NICKFX = [
+  { id: 'none',    name: 'Tanpa Efek',       desc: 'Nama normal',                 price: 0,   emoji: '\U0001F4DD' },
+  { id: 'rainbow', name: 'Nickname Rainbow', desc: 'Nama warna-warni beranimasi', price: 200, emoji: '\U0001F308' },
+];
+
+export function nickFxById(id) {
+  return NICKFX.find((x) => x.id === id) || null;
 }

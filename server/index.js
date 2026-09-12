@@ -72,6 +72,7 @@ function cleanProfile(p) {
     },
     country: /^[A-Z]{2}$/.test(p.country || '') ? p.country : null,
     avatarBorder: typeof p.avatarBorder === 'string' ? p.avatarBorder.slice(0, 24) : null,
+    nickFx: p.nickFx === 'rainbow' ? 'rainbow' : 'none',
   };
 }
 /** Tampilan publik: tanpa koin/proteksi/teman/settings lengkap. */
@@ -84,6 +85,7 @@ function publicAccount(a) {
     },
     skin: (a.settings && a.settings.skin) || 'wood',
     avatarBorder: a.avatarBorder || null,
+    nickFx: a.nickFx || 'none',
     likes: a.likes || 0,
     rev: a.rev, updatedAt: a.updatedAt,
   };
@@ -165,6 +167,7 @@ app.put('/api/account/:id', (req, res) => {
     a.avatar = p.avatar;
     a.country = p.country;
     a.avatarBorder = p.avatarBorder;
+    a.nickFx = p.nickFx;
   }
   if (b.stats) {
     const cs = cleanStats(b.stats);
@@ -175,7 +178,7 @@ app.put('/api/account/:id', (req, res) => {
     if (Array.isArray(b.settings.skins)) {
       a.settings.skins = [...new Set(b.settings.skins.map(String).map((x) => x.slice(0, 24)))].slice(0, 24);
     }
-    for (const k of ['borders', 'avatars']) {
+    for (const k of ['borders', 'avatars', 'nickfx']) {
       if (Array.isArray(b.settings[k])) {
         a.settings[k] = [...new Set(b.settings[k].map(String).map((x) => x.slice(0, 24)))].slice(0, 24);
       }
@@ -198,7 +201,7 @@ app.get('/api/leaderboard', (req, res) => {
   const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 50));
   const all = Object.values(db.accounts).map((a) => ({
     id: a.id, name: a.name, username: a.username, avatar: a.avatar, country: a.country,
-    stars: a.stats.stars, streak: a.stats.streak, likes: a.likes || 0, avatarBorder: a.avatarBorder || null,
+    stars: a.stats.stars, streak: a.stats.streak, likes: a.likes || 0, nickFx: a.nickFx || 'none', avatarBorder: a.avatarBorder || null,
   }));
   all.sort((x, y) => (y[by] - x[by]) || (y.stars - x.stars));
   const me = String(req.query.me || '').toUpperCase();
