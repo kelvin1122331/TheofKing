@@ -18,8 +18,10 @@ export const AVATARS = [
   { id: 'robot',   name: 'Robot Tempur', emoji: '🤖', price: 60 },
   { id: 'phoenix', name: 'Phoenix Api',  emoji: '🔥', price: 80 },
   { id: 'ninja',   name: 'Ninja Bayangan', emoji: '🥷', price: 100 },
+  { id: 'runespider', name: 'Laba-laba Rune', emoji: '🕷️', price: 100 },
   { id: 'knight',  name: 'Ksatria Emas', emoji: '🛡️', price: 120 },
   { id: 'dragon',  name: 'Naga Langit',  emoji: '🐉', price: 150 },
+  { id: 'nightmare', name: 'Mimpi Buruk', emoji: '👁️', price: 150 },
 ];
 
 export function borderById(id) {
