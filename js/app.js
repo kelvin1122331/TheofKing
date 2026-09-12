@@ -2,14 +2,17 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=4';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=4';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=4';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo } from './ui.js?v=4';
-import { Net, peerErrorMessage } from './net.js?v=4';
-import { Game } from './game.js?v=4';
-import { preloadPieces } from './pieces.js?v=4';
-import { AI_LEVELS } from './ai.js?v=4';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=5';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=5';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=5';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo } from './ui.js?v=5';
+import { Net, peerErrorMessage } from './net.js?v=5';
+import { Game } from './game.js?v=5';
+import { preloadPieces } from './pieces.js?v=5';
+import { AI_LEVELS } from './ai.js?v=5';
+
+// Penanda untuk skrip diagnostik boot (lihat index.html)
+window.__TOK_MODULE_OK = true;
 
 // ------------------------- state -------------------------
 let screen = 'home';
@@ -730,6 +733,7 @@ function cycleTheme() {
 
 // ------------------------- init -------------------------
 function init() {
+  window.__TOK_INIT_STARTED = true;
   // Laporkan error tak terduga ke layar (jangan pernah gagal diam-diam)
   window.addEventListener('error', (e) => {
     if (e && e.message && !String(e.message).includes('Script error')) {
@@ -820,6 +824,7 @@ function init() {
   if (!currentProfile()) {
     openModal('modal-onboarding');
   }
+  window.__TOK_READY = true;
 }
 
 document.addEventListener('DOMContentLoaded', init);

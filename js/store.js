@@ -2,25 +2,32 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=4';
+import { rankForStars } from './ranks.js?v=5';
 
 const PREFIX = 'tok.v1.';
+
+// Cache memori: aplikasi tetap jalan dalam sesi ini walau localStorage diblokir
+// (iframe sandbox / mode privat ketat). Data tersimpan permanen jika bisa.
+const memCache = {};
 
 function read(key, fallback) {
   try {
     const raw = localStorage.getItem(PREFIX + key);
-    if (raw == null) return fallback;
-    return JSON.parse(raw);
+    if (raw == null) return key in memCache ? memCache[key] : fallback;
+    const val = JSON.parse(raw);
+    memCache[key] = val;
+    return val;
   } catch {
-    return fallback;
+    return key in memCache ? memCache[key] : fallback;
   }
 }
 
 function write(key, value) {
+  memCache[key] = value;
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
   } catch {
-    /* abaikan (storage penuh / privat) */
+    /* abaikan (storage penuh / privat / diblokir) */
   }
 }
 
@@ -45,9 +52,14 @@ export const store = {
   set seeds(v) { write('seeds', v); },
 
   clearAll() {
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith(PREFIX))
-      .forEach((k) => localStorage.removeItem(k));
+    for (const k of Object.keys(memCache)) delete memCache[k];
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(PREFIX))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      /* abaikan */
+    }
   },
 };
 

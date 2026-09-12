@@ -6,14 +6,94 @@
   <title>TheofKing — Main Catur Online &amp; Offline</title>
   <meta name="description" content="TheofKing: game catur online & offline dengan sistem rank Bronze → Master, bintang, streak kemenangan, dan global leaderboard." />
   <meta name="theme-color" content="#0b0e17" />
+  <!-- Jangan cache HTML ini; kalau ubah css/js, naikkan ?v= di bawah & di import antar-modul -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <script>
+  /* Diagnostik boot TheofKing (skrip klasik: tetap jalan walau modul aplikasi gagal).
+     Ditulis gaya ES5 agar jalan juga di browser lama. */
+  window.__TOK_BOOT_ERRORS = [];
+  window.__TOK_STORAGE_OK = true;
+  try {
+    localStorage.setItem('__tok_probe', '1');
+    localStorage.removeItem('__tok_probe');
+  } catch (err) { window.__TOK_STORAGE_OK = false; }
+  window.addEventListener('error', function (e) {
+    if (!e) return;
+    var msg = '';
+    if (e.message && String(e.message).indexOf('Script error') === -1) msg = String(e.message);
+    else if (e.target && (e.target.src || e.target.href)) msg = 'Gagal memuat file: ' + (e.target.src || e.target.href);
+    if (msg && window.__TOK_BOOT_ERRORS.length < 5) window.__TOK_BOOT_ERRORS.push(msg.slice(0, 220));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    var m = e && e.reason ? (e.reason.message || String(e.reason)) : 'kesalahan tak dikenal';
+    if (window.__TOK_BOOT_ERRORS.length < 5) window.__TOK_BOOT_ERRORS.push(String(m).slice(0, 220));
+  });
+  window.__TOK_SHOW_BANNER = function (kind) {
+    if (!document.body || document.getElementById('tok-boot-banner')) return;
+    var title = 'Mohon tunggu...';
+    var desc = '';
+    if (kind === 'nomodule') {
+      title = 'Browser Terlalu Lama';
+      desc = 'Browser ini tidak mendukung teknologi aplikasi (JavaScript module). Solusi: gunakan Chrome / Edge / Firefox terbaru, atau update browser kamu.';
+    } else if (!window.__TOK_MODULE_OK) {
+      title = 'Gagal Memuat Aplikasi';
+      desc = 'File aplikasi gagal dimuat. Penyebab umum: koneksi terputus sesaat, cache browser korup, atau jaringan memblokir unduhan file.';
+    } else if (!window.__TOK_INIT_STARTED) {
+      title = 'Aplikasi Gagal Mulai';
+      desc = 'Aplikasi gagal mulai. Coba muat ulang halaman.';
+    } else {
+      title = 'Aplikasi Gagal Selesai Dimuat';
+      desc = 'Terjadi kendala saat menyiapkan aplikasi. Coba muat ulang halaman.';
+    }
+    if (!window.__TOK_STORAGE_OK) {
+      desc += ' Catatan: penyimpanan browser diblokir (mode privat/ketat), sehingga nama & rank hanya tersimpan sementara.';
+    }
+    var esc = function (x) {
+      return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+    var errs = window.__TOK_BOOT_ERRORS.slice(0, 3);
+    var errHtml = '';
+    if (errs.length) {
+      errHtml = '<div style="text-align:left;background:rgba(255,93,108,.12);border:1px solid rgba(255,93,108,.5);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:12px;color:#ffb3ba">'
+        + '<b>Detail teknis (untuk laporan):</b><br>' + errs.map(esc).join('<br>') + '</div>';
+    }
+    var ov = document.createElement('div');
+    ov.id = 'tok-boot-banner';
+    ov.setAttribute('style', 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(4,6,12,.94);padding:16px;font-family:-apple-system,Segoe UI,Roboto,sans-serif');
+    ov.innerHTML = '<div style="width:100%;max-width:470px;background:#171d33;border:2px solid #f5c044;border-radius:16px;padding:26px 24px;color:#f2f4fa;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.5)">'
+      + '<div style="font-size:1.15rem;font-weight:800;margin-bottom:10px">' + esc(title) + '</div>'
+      + '<div style="font-size:.88rem;color:#c6cddd;line-height:1.55;margin-bottom:14px">' + esc(desc) + '</div>'
+      + errHtml
+      + '<button id="tok-boot-reload" style="width:100%;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:1rem;color:#241700;background:linear-gradient(135deg,#ffdf8e,#f5c044 55%,#d99a1f);cursor:pointer">Muat Ulang Halaman</button>'
+      + '<div style="margin-top:12px;font-size:.75rem;color:#9aa3b8">Kalau tetap gagal: coba browser lain, matikan mode hemat data/VPN, atau screenshot pesan ini untuk admin.</div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('tok-boot-reload').onclick = function () { location.reload(); };
+    var iv = setInterval(function () {
+      if (window.__TOK_READY) { clearInterval(iv); var b = document.getElementById('tok-boot-banner'); if (b) b.remove(); }
+    }, 1000);
+  };
+  setTimeout(function () {
+    if (window.__TOK_READY) return;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { window.__TOK_SHOW_BANNER('timeout'); });
+    } else {
+      window.__TOK_SHOW_BANNER('timeout');
+    }
+  }, 8000);
+  </script>
+  <script nomodule>window.__TOK_SHOW_BANNER && window.__TOK_SHOW_BANNER('nomodule');</script>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
+  <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
   <div class="bg-decor" aria-hidden="true">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -336,16 +416,6 @@
 
   <!-- ============ CONFIRM ============ -->
   <div class="modal-backdrop" id="modal-confirm" hidden style="display:none">
-    <div c>
-            <li>Tersedia jam catur, notasi, dan tombol menyerah/remis.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ CONFIRM ============ -->
-  <div class="modal-backdrop" id="modal-confirm" hidden style="display:none">
     <div class="modal modal-small">
       <h2 id="confirm-title">Yakin?</h2>
       <p class="muted" id="confirm-message"></p>
@@ -359,7 +429,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=2"></script>
-  <script type="module" src="js/app.js?v=2"></script>
+  <script src="js/vendor/peerjs.min.js?v=5"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
