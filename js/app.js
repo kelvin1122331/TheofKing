@@ -2,16 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=12';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=12';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=12';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=12';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=12';
-import { Game } from './game.js?v=12';
-import { preloadPieces } from './pieces.js?v=12';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=12';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=12';
-import { SKINS, skinById, applySkin } from './skins.js?v=12';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=13';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=13';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=13';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=13';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=13';
+import { Game } from './game.js?v=13';
+import { preloadPieces } from './pieces.js?v=13';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=13';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=13';
+import { SKINS, skinById, applySkin } from './skins.js?v=13';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -1060,6 +1060,106 @@ function submitAddFriend() {
   renderFriends();
 }
 
+// ------------------------- admin -------------------------
+const ADMIN_USER = 'admintheo5757';
+const ADMIN_PASS = 'theofkingsid';
+let brandTaps = [];
+let isAdmin = false;
+const adminLog = [];
+
+function openAdminLogin() {
+  if (isAdmin) { openAdminPanel(); return; }
+  document.getElementById('adm-error').hidden = true;
+  openModal('modal-admin-login');
+}
+
+function submitAdminLogin() {
+  const u = document.getElementById('adm-user').value.trim();
+  const pw = document.getElementById('adm-pass').value;
+  const er = document.getElementById('adm-error');
+  if (u === ADMIN_USER && pw === ADMIN_PASS) {
+    isAdmin = true;
+    document.getElementById('adm-user').value = '';
+    document.getElementById('adm-pass').value = '';
+    er.hidden = true;
+    closeModal('modal-admin-login');
+    sfx.buy();
+    toast('Selamat datang, Admin! 🛠️', 'gold');
+    openAdminPanel();
+  } else {
+    er.textContent = 'User / sandi salah ⛔';
+    er.hidden = false;
+    sfx.illegal();
+  }
+}
+
+function openAdminPanel() {
+  if (!isAdmin) { openAdminLogin(); return; }
+  if (!currentProfile()) {
+    closeModal('modal-admin');
+    toast('Buat akun pemain dulu 👤', 'error');
+    openModal('modal-onboarding');
+    return;
+  }
+  renderAdminTarget();
+  renderAdminLog();
+  openModal('modal-admin');
+}
+
+function resolveAdminTarget() {
+  const q = document.getElementById('adm-target').value.trim().replace(/^@/, '').toUpperCase();
+  const p = currentProfile();
+  if (!q || !p) return null;
+  if (q === String(p.username || '').toUpperCase() || q === String(p.id || '').toUpperCase()) return p;
+  return null;
+}
+
+function renderAdminTarget() {
+  const t = resolveAdminTarget();
+  const box = document.getElementById('adm-target-info');
+  if (t) {
+    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})<br>⭐ saat ini: <b>${store.stats.stars || 0}</b>`;
+  } else {
+    box.innerHTML = `🔍 Ketik ID / username akun <b>di perangkat ini</b>.`;
+  }
+}
+
+function renderAdminLog() {
+  document.getElementById('adm-log').innerHTML = adminLog.length
+    ? adminLog.map((x) => `<div>${esc(x)}</div>`).join('')
+    : '<div class="muted">Belum ada perubahan.</div>';
+}
+
+function applyAdminStars(mode) {
+  const t = resolveAdminTarget();
+  const er = document.getElementById('adm-error2');
+  if (!t) { er.textContent = 'Akun tidak ditemukan di perangkat ini 🔍'; er.hidden = false; sfx.illegal(); return; }
+  const n = Math.floor(Number(document.getElementById('adm-amount').value));
+  const lo = mode === 'set' ? 0 : 1;
+  if (!Number.isFinite(n) || n < lo || n > 99999) {
+    er.textContent = mode === 'set' ? 'Jumlah harus 0–99999 🎯' : 'Jumlah harus 1–99999 ➕';
+    er.hidden = false; sfx.illegal(); return;
+  }
+  er.hidden = true;
+  const st = store.stats;
+  const before = st.stars || 0;
+  st.stars = mode === 'set' ? n : before + n;
+  saveStats(st);
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${t.username}: ${before} → ${st.stars} ⭐`);
+  renderAdminTarget();
+  renderAdminLog();
+  sfx.buy();
+  toast(mode === 'set' ? `Bintang @${t.username} jadi ${st.stars}! 🎯` : `+${n} ⭐ untuk @${t.username}!`, 'success');
+}
+
+function adminLogout() {
+  isAdmin = false;
+  closeModal('modal-admin');
+  sfx.click();
+  toast('Admin keluar 🔒', 'gold');
+}
+
 // ------------------------- skin & shop -------------------------
 function applyEquippedSkin() {
   applySkin(document.getElementById('board'), store.settings.skin || 'wood');
@@ -1198,13 +1298,25 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
 
   // topbar
-  $('#brand-home').addEventListener('click', (e) => { e.preventDefault(); sfx.click(); if (screen !== 'home') goMenu(); else window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  $('#brand-home').addEventListener('click', (e) => {
+    e.preventDefault(); sfx.click();
+    const now = Date.now();
+    brandTaps = brandTaps.filter((t) => now - t < 2500);
+    brandTaps.push(now);
+    if (brandTaps.length >= 5) { brandTaps = []; openAdminLogin(); return; }
+    if (screen !== 'home') goMenu(); else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  $('#adm-login-submit').addEventListener('click', submitAdminLogin);
+  $('#adm-target').addEventListener('input', renderAdminTarget);
+  $('#adm-add').addEventListener('click', () => applyAdminStars('add'));
+  $('#adm-set').addEventListener('click', () => applyAdminStars('set'));
+  $('#adm-logout').addEventListener('click', adminLogout);
   $('#profile-chip').addEventListener('click', (e) => {
     sfx.click();
     if (!currentProfile()) { openModal('modal-onboarding'); return; }

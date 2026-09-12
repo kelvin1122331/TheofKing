@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=12" />
+  <link rel="stylesheet" href="css/style.css?v=13" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -452,6 +452,45 @@
     </div>
   </div>
 
+  <!-- ============ ADMIN ============ -->
+  <div class="modal-backdrop" id="modal-admin-login" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-admin-login">✕</button>
+      <h2>🔐 Admin</h2>
+      <p class="muted">Area khusus. Masukkan user &amp; sandi admin.</p>
+      <label class="field">User
+        <input id="adm-user" maxlength="24" placeholder="User admin" autocomplete="off" />
+      </label>
+      <label class="field">Sandi
+        <input id="adm-pass" type="password" maxlength="32" placeholder="••••••" autocomplete="off" />
+      </label>
+      <div class="form-error" id="adm-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="adm-login-submit" type="button">🔓 Masuk</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-admin" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-admin">✕</button>
+      <h2>🛠️ Panel Admin</h2>
+      <p class="muted">Kelola bintang akun <b>di perangkat ini</b>.</p>
+      <label class="field">ID / Username Pemain
+        <input id="adm-target" maxlength="16" placeholder="cth: TK-AB22CD / theo_raja" autocomplete="off" />
+      </label>
+      <div class="adm-target-info" id="adm-target-info"></div>
+      <label class="field">Jumlah Bintang
+        <input id="adm-amount" type="number" min="0" max="99999" placeholder="cth: 100" />
+      </label>
+      <div class="form-error" id="adm-error2" hidden></div>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set" type="button">🎯 Ubah Jadi</button>
+      </div>
+      <div class="field-label">🧾 Riwayat Sesi Ini</div>
+      <div class="adm-log" id="adm-log"></div>
+      <button class="btn btn-danger-ghost btn-block" id="adm-logout" type="button">🔒 Keluar Admin</button>
+    </div>
+  </div>
+
   <!-- ============ LEADERBOARD ============ -->
   <div class="modal-backdrop" id="modal-leaderboard" hidden style="display:none">
     <div class="modal modal-wide">
@@ -545,7 +584,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=12"></script>
-  <script type="module" src="js/app.js?v=12"></script>
+  <script src="js/vendor/peerjs.min.js?v=13"></script>
+  <script type="module" src="js/app.js?v=13"></script>
 </body>
 </html>
