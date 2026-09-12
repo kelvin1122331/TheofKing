@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=23" />
+  <link rel="stylesheet" href="css/style.css?v=24" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -340,6 +340,7 @@
         <button type="button" class="tab" data-shop-tab="borders">🖼️ Bingkai</button>
         <button type="button" class="tab" data-shop-tab="avatars">😎 Avatar</button>
         <button type="button" class="tab" data-shop-tab="nickfx">✨ Efek</button>
+        <button type="button" class="tab" data-shop-tab="topup">🪙 Top Up</button>
       </div>
       <div id="shop-pane-prot">
         <h3 class="shop-title">🛡️ Star Protection</h3>
@@ -365,6 +366,10 @@
       <div id="shop-pane-nickfx" hidden>
         <h3 class="shop-title">✨ Efek Nama <span class="muted small">— terlihat semua pemain!</span></h3>
         <div class="skins-grid" id="nickfx-grid"></div>
+      </div>
+      <div id="shop-pane-topup" hidden>
+        <h3 class="shop-title">🪙 Top Up Koin <span class="muted small">— bayar via WhatsApp, diproses admin</span></h3>
+        <div class="skins-grid" id="topup-grid"></div>
       </div>
     </div>
   </div>
@@ -464,6 +469,27 @@
       <div class="form-error" id="fr-error" hidden></div>
       <div class="field-label">📋 Daftar Teman (<span id="fr-count">0</span>)</div>
       <div class="friends-list" id="friends-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ TOP UP ============ -->
+  <div class="modal-backdrop" id="modal-topup" hidden style="display:none">
+    <div class="modal modal-scroll">
+      <button class="modal-x" data-close="modal-topup">✕</button>
+      <h2>🧾 Konfirmasi Top Up</h2>
+      <div class="topup-summary" id="topup-summary"></div>
+      <div class="topup-guide">
+        <h3>📋 Panduan Pembelian</h3>
+        <ol>
+          <li>Tekan tombol <b>WhatsApp</b> di bawah — pesan otomatis sudah terisi data kamu &amp; paket pilihan.</li>
+          <li>Kirim chat ke admin, lalu <b>transfer sesuai harga</b> paket.</li>
+          <li>Kirim <b>bukti transfer</b> (screenshot) ke admin.</li>
+          <li>Admin memproses &amp; <b>koin langsung masuk</b> ke akunmu! 🎉</li>
+        </ol>
+        <p class="muted small">⏱️ Pesanan diproses setelah pembayaran dikonfirmasi. Jangan tutup chat sebelum koin masuk ya!</p>
+      </div>
+      <a class="btn btn-wa btn-block" id="topup-wa-btn" href="#" target="_blank" rel="noopener">💬 Bayar via WhatsApp</a>
+      <button class="btn btn-outline btn-block" data-close="modal-topup" style="margin-top:8px">Batal</button>
     </div>
   </div>
 
@@ -685,7 +711,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=23"></script>
-  <script type="module" src="js/app.js?v=23"></script>
+  <script src="js/vendor/peerjs.min.js?v=24"></script>
+  <script type="module" src="js/app.js?v=24"></script>
 </body>
 </html>

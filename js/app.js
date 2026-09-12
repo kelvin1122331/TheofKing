@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=23';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=23';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=23';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=23';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=23';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=23';
-import { Game } from './game.js?v=23';
-import { preloadPieces } from './pieces.js?v=23';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=23';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=23';
-import { SKINS, skinById, applySkin } from './skins.js?v=23';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=23';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=24';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=24';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=24';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=24';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=24';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=24';
+import { Game } from './game.js?v=24';
+import { preloadPieces } from './pieces.js?v=24';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=24';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=24';
+import { SKINS, skinById, applySkin } from './skins.js?v=24';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=24';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -1978,6 +1978,55 @@ function ownedSkins() {
   return [...new Set([...base, ...s.filter((id) => known.has(id))])];
 }
 
+// ------------------------- top up koin (via WhatsApp admin) -------------------------
+const TOPUP_WA = '6288902842008'; // 0889-0284-2008
+const TOPUP_PACKS = [
+  { coins: 50, price: 'Rp7.000' },
+  { coins: 100, price: 'Rp14.000' },
+  { coins: 250, price: 'Rp29.000' },
+  { coins: 500, price: 'Rp69.000', badge: '⭐ Populer' },
+  { coins: 870, price: 'Rp98.000' },
+  { coins: 1000, price: 'Rp139.000' },
+  { coins: 5000, price: 'Rp675.000', badge: '🔥 Paling Hemat' },
+];
+
+function renderTopupGrid() {
+  const grid = document.getElementById('topup-grid');
+  grid.innerHTML = TOPUP_PACKS.map((p, i) => `
+    <div class="skin-card topup-card">
+      ${p.badge ? `<div class="topup-badge">${p.badge}</div>` : ''}
+      <div class="topup-coins">🪙 ${p.coins.toLocaleString('id-ID')}</div>
+      <div class="skin-name">${p.price}</div>
+      <button class="btn btn-gold btn-sm" data-topup="${i}">Beli</button>
+    </div>`).join('');
+  grid.querySelectorAll('[data-topup]').forEach((x) => { x.onclick = () => openTopupConfirm(Number(x.dataset.topup)); });
+}
+
+function openTopupConfirm(i) {
+  const p = TOPUP_PACKS[i];
+  if (!p) return;
+  const me = currentProfile() || {};
+  sfx.click();
+  document.getElementById('topup-summary').innerHTML = `
+    <div class="topup-row"><span>📦 Paket</span><b>🪙 ${p.coins.toLocaleString('id-ID')} koin</b></div>
+    <div class="topup-row"><span>💰 Harga</span><b class="gold-text">${p.price}</b></div>
+    <div class="topup-row"><span>👤 Nama</span><b>${esc(me.name || '-')}</b></div>
+    <div class="topup-row"><span>📝 Username</span><b>@${esc(me.username || '-')}</b></div>
+    <div class="topup-row"><span>🔑 ID Pemain</span><b>${esc(me.id || '-')}</b></div>`;
+  const msg =
+    `Halo Admin TheofKing! \u{1F451}\nSaya mau TOP UP koin:\n\n` +
+    `\u{1F4E6} Paket: ${p.coins} koin\n` +
+    `\u{1F4B0} Harga: ${p.price}\n` +
+    `\u{1F464} Nama: ${me.name || '-'}\n` +
+    `\u{1F4DD} Username: @${me.username || '-'}\n` +
+    `\u{1F511} ID Pemain: ${me.id || '-'}\n\n` +
+    `Saya akan kirim bukti transfer. Terima kasih!`;
+  const wa = document.getElementById('topup-wa-btn');
+  wa.href = `https://wa.me/${TOPUP_WA}?text=${encodeURIComponent(msg)}`;
+  wa.onclick = () => { toast('Selesaikan pembayaran di WhatsApp ya! 🙏', 'gold'); };
+  openModal('modal-topup');
+}
+
 function openShop() {
   renderShop();
   openModal('modal-shop');
@@ -2027,6 +2076,7 @@ function renderShop() {
   renderBordersGrid();
   renderAvatarsGrid();
   renderNickFxGrid();
+  renderTopupGrid();
 }
 
 let shopTab = 'prot';
@@ -2036,7 +2086,7 @@ function paintShopTabs() {
     t.classList.toggle('active', t.dataset.shopTab === shopTab);
     t.onclick = () => { shopTab = t.dataset.shopTab; sfx.click(); paintShopTabs(); };
   });
-  for (const id of ['prot', 'skins', 'borders', 'avatars', 'nickfx']) {
+  for (const id of ['prot', 'skins', 'borders', 'avatars', 'nickfx', 'topup']) {
     document.getElementById('shop-pane-' + id).hidden = shopTab !== id;
   }
 }
@@ -2296,7 +2346,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat', 'modal-topup']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
