@@ -1163,3 +1163,45 @@ body { touch-action: manipulation; }
   .spin-prizes { grid-template-columns: repeat(4, 1fr); }
   .spin-results { grid-template-columns: repeat(5, 1fr); }
 }
+
+/* ---------- selebrasi naik rank ---------- */
+.rankup-overlay {
+  position: fixed; inset: 0; z-index: 130;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 5, 18, 0.9); overflow: hidden;
+  animation: fadeIn 0.35s both; cursor: pointer;
+}
+.rankup-rays {
+  position: absolute; inset: -60%;
+  background: repeating-conic-gradient(rgba(245, 192, 68, 0.14) 0deg 10deg, transparent 10deg 20deg);
+  animation: jackpot-rays 7s linear infinite; pointer-events: none;
+}
+.rankup-inner { position: relative; text-align: center; padding: 20px; }
+.rankup-kicker { font-size: 1.15rem; font-weight: 800; animation: rankup-drop 0.6s 0.1s both; }
+.rankup-title {
+  font-size: clamp(3rem, 12vw, 5.5rem); font-weight: 900; letter-spacing: 2px; line-height: 1.1;
+  background: linear-gradient(180deg, #fff7d6 10%, #ffd166 35%, #ff9f1c 60%, #ff5d2e 85%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 0 rgba(90, 50, 0, 0.9)) drop-shadow(0 0 26px rgba(255, 180, 40, 0.75));
+  animation: rankup-pop 0.7s cubic-bezier(0.2, 1.7, 0.4, 1) 0.2s both, rankup-glow 1.4s ease-in-out 1s infinite;
+}
+@keyframes rankup-pop { from { transform: scale(0.2) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rankup-glow { 50% { transform: scale(1.05); filter: drop-shadow(0 4px 0 rgba(90, 50, 0, 0.9)) drop-shadow(0 0 44px rgba(255, 200, 60, 1)); } }
+@keyframes rankup-drop { from { transform: translateY(-30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.rankup-trans { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 18px 0 10px; }
+.rankup-side {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px; padding: 12px 20px; font-weight: 800; font-size: 1rem;
+}
+.rankup-side span:first-child { font-size: 2.6rem; }
+.rankup-side.old { animation: vsInL 0.6s 0.5s both; opacity: 0.85; }
+.rankup-side.new {
+  border-color: var(--gold); box-shadow: 0 0 30px rgba(245, 192, 68, 0.55);
+  animation: vsInR 0.6s 0.5s both, rankup-glow 1.4s ease-in-out 1.2s infinite;
+}
+.rankup-side.new span:first-child { font-size: 3.2rem; }
+.rankup-arrow { font-size: 2rem; animation: rankup-nudge 0.9s ease-in-out 0.9s infinite; }
+@keyframes rankup-nudge { 50% { transform: translateX(8px); } }
+.rankup-stars { font-size: 1.25rem; font-weight: 900; color: var(--gold); margin-top: 6px; animation: rankup-drop 0.6s 0.8s both; }
+.rankup-hint { margin-top: 18px; color: var(--muted); font-size: 0.9rem; animation: vsBlink 1.4s 1.2s infinite; }

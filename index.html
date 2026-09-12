@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=25" />
+  <link rel="stylesheet" href="css/style.css?v=26" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -516,6 +516,22 @@
     </div>
   </div>
 
+  <!-- ============ RANK UP ============ -->
+  <div id="rankup-overlay" class="rankup-overlay" hidden style="display:none" aria-hidden="true">
+    <div class="rankup-rays"></div>
+    <div class="rankup-inner">
+      <div class="rankup-kicker">🎉 SELAMAT! 🎉</div>
+      <div class="rankup-title">RANK UP!</div>
+      <div class="rankup-trans">
+        <div class="rankup-side old"><span id="rankup-old-icon"></span><span id="rankup-old-name"></span></div>
+        <div class="rankup-arrow">➡️</div>
+        <div class="rankup-side new"><span id="rankup-new-icon"></span><span id="rankup-new-name"></span></div>
+      </div>
+      <div class="rankup-stars" id="rankup-stars"></div>
+      <div class="rankup-hint">Ketuk di mana saja untuk lanjut 👆</div>
+    </div>
+  </div>
+
   <!-- ============ ARENA ============ -->
   <div class="modal-backdrop" id="modal-arena" hidden style="display:none">
     <div class="modal modal-arena">
@@ -734,7 +750,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=25"></script>
-  <script type="module" src="js/app.js?v=25"></script>
+  <script src="js/vendor/peerjs.min.js?v=26"></script>
+  <script type="module" src="js/app.js?v=26"></script>
 </body>
 </html>

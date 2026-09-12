@@ -2,19 +2,19 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=25';
-import { Board } from './board.js?v=25';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=25';
-import { sfx } from './sound.js?v=25';
-import { store, saveStats, pushRecent } from './store.js?v=25';
-import { applyResult, rankForStars } from './ranks.js?v=25';
+import { Chess } from './vendor/chess.js?v=26';
+import { Board } from './board.js?v=26';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=26';
+import { sfx } from './sound.js?v=26';
+import { store, saveStats, pushRecent } from './store.js?v=26';
+import { applyResult, rankForStars } from './ranks.js?v=26';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
-  confettiBurst, esc, confirmDialog,
-} from './ui.js?v=25';
-import { pieceSrc } from './pieces.js?v=25';
-import { flagFor } from './countries.js?v=25';
-import { applySkin, skinById } from './skins.js?v=25';
+  confettiBurst, esc, confirmDialog, showRankUp, hideRankUp,
+} from './ui.js?v=26';
+import { pieceSrc } from './pieces.js?v=26';
+import { flagFor } from './countries.js?v=26';
+import { applySkin, skinById } from './skins.js?v=26';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -135,6 +135,7 @@ export class Game {
     this.moveToken++;
     this.drawOffered = false;
     this.rematchState = 'none';
+    hideRankUp();
     this.hideResult();
     $('#moves-list').innerHTML = '<li class="moves-empty">Belum ada langkah.</li>';
     $('#material-chip').hidden = true;
@@ -681,6 +682,7 @@ export class Game {
     if (delta.rankUp) {
       sfx.rankup();
       confettiBurst(260);
+      setTimeout(() => showRankUp(delta.before, delta.after, store.stats.stars), 700);
       rk.innerHTML = protMsg + `<span class="rankup">🎉 NAIK RANK: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}!</span>`;
     } else if (delta.rankDown) {
       rk.innerHTML = protMsg + `<span class="muted">Rank turun: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}. Semangat, balas dendam! 💪</span>`;

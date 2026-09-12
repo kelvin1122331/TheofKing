@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=25';
-import { rankForStars, rankProgress } from './ranks.js?v=25';
-import { sfx } from './sound.js?v=25';
-import { flagFor } from './countries.js?v=25';
-import { borderImg, borderFx } from './cosmetics.js?v=25';
+import { avatarGradientFor, initialsFor } from './store.js?v=26';
+import { rankForStars, rankProgress } from './ranks.js?v=26';
+import { sfx } from './sound.js?v=26';
+import { flagFor } from './countries.js?v=26';
+import { borderImg, borderFx } from './cosmetics.js?v=26';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -142,6 +142,35 @@ export function nickHTML(name, fx) {
   if (fx === 'rainbow') return `<span class="nick-rainbow">${t}</span>`;
   if (fx === 'inferno') return `<span class="nick-inferno">${t}</span>`;
   return t;
+}
+
+let rankupTimer = null;
+
+/** Overlay selebrasi animasi saat naik rank. Ketuk / 6 dtk untuk tutup. */
+export function showRankUp(before, after, stars) {
+  const ov = document.getElementById('rankup-overlay');
+  if (!ov) return;
+  document.getElementById('rankup-old-icon').textContent = before.icon;
+  document.getElementById('rankup-old-name').textContent = before.name;
+  document.getElementById('rankup-new-icon').textContent = after.icon;
+  document.getElementById('rankup-new-name').textContent = after.name;
+  document.getElementById('rankup-stars').textContent = `\u2B50 ${stars} bintang`;
+  ov.hidden = false;
+  ov.style.display = 'flex';
+  ov.setAttribute('aria-hidden', 'false');
+  ov.onclick = () => hideRankUp();
+  clearTimeout(rankupTimer);
+  rankupTimer = setTimeout(hideRankUp, 6000);
+  setTimeout(() => confettiBurst(320), 200);
+}
+
+export function hideRankUp() {
+  const ov = document.getElementById('rankup-overlay');
+  if (!ov) return;
+  clearTimeout(rankupTimer);
+  ov.hidden = true;
+  ov.style.display = 'none';
+  ov.setAttribute('aria-hidden', 'true');
 }
 
 export function rankBadgeHTML(stars, showName = true) {
