@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -281,6 +281,31 @@
     </div>
   </footer>
 
+  <!-- ============ VS SPLASH ============ -->
+  <div id="vs-splash" class="vs-overlay" style="display:none" aria-hidden="true">
+    <div class="vs-inner">
+      <div class="vs-mode" id="vs-mode">Pertandingan</div>
+      <div class="vs-cards">
+        <div class="vs-card vs-me">
+          <div class="vs-tag">KAMU</div>
+          <div class="vs-avatar" id="vs-me-avatar"></div>
+          <div class="vs-name" id="vs-me-name"></div>
+          <div class="vs-rank" id="vs-me-rank"></div>
+        </div>
+        <div class="vs-badge"><span>VS</span></div>
+        <div class="vs-card vs-opp">
+          <div class="vs-tag">LAWAN</div>
+          <div class="vs-avatar" id="vs-opp-avatar"></div>
+          <div class="vs-name" id="vs-opp-name"></div>
+          <div class="vs-rank" id="vs-opp-rank"></div>
+        </div>
+      </div>
+      <div class="vs-sub" id="vs-sub"></div>
+      <div class="vs-bar"><i></i></div>
+      <div class="vs-skip">ketuk untuk lewati</div>
+    </div>
+  </div>
+
   <!-- ============ ONBOARDING ============ -->
   <div class="modal-backdrop show" id="modal-onboarding" hidden style="display:none">
     <div class="modal modal-profile">
@@ -429,7 +454,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=5"></script>
-  <script type="module" src="js/app.js?v=5"></script>
+  <script src="js/vendor/peerjs.min.js?v=6"></script>
+  <script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>

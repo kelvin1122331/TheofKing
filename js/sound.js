@@ -1,7 +1,7 @@
 // ============================================================
 // Efek suara hasil sintesis WebAudio (tanpa file audio).
 // ============================================================
-import { store } from './store.js?v=5';
+import { store } from './store.js?v=6';
 
 let ctx = null;
 let noiseBuf = null;
@@ -118,4 +118,5 @@ export const sfx = {
   message() { tone({ freq: 740, dur: 0.07, type: 'sine', vol: 0.18 }); tone({ freq: 980, dur: 0.09, type: 'sine', vol: 0.16, delay: 0.07 }); },
   rankup()  { [392, 523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone({ freq: f, dur: 0.2, type: 'triangle', vol: 0.22, delay: i * 0.09 })); },
   notify()  { tone({ freq: 620, dur: 0.1, type: 'triangle', vol: 0.2 }); tone({ freq: 830, dur: 0.14, type: 'triangle', vol: 0.2, delay: 0.1 }); },
+  versus()  { tone({ freq: 110, end: 440, dur: 0.5, type: 'sawtooth', vol: 0.07 }); tone({ freq: 220, end: 880, dur: 0.5, type: 'triangle', vol: 0.16, delay: 0.05 }); thock({ vol: 0.7, delay: 0.55, bright: 3000 }); tone({ freq: 523, dur: 0.3, type: 'triangle', vol: 0.2, delay: 0.62 }); tone({ freq: 784, dur: 0.4, type: 'triangle', vol: 0.2, delay: 0.74 }); },
 };

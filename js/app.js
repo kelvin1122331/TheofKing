@@ -2,14 +2,14 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=5';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=5';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=5';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo } from './ui.js?v=5';
-import { Net, peerErrorMessage } from './net.js?v=5';
-import { Game } from './game.js?v=5';
-import { preloadPieces } from './pieces.js?v=5';
-import { AI_LEVELS } from './ai.js?v=5';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=6';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=6';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=6';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=6';
+import { Net, peerErrorMessage } from './net.js?v=6';
+import { Game } from './game.js?v=6';
+import { preloadPieces } from './pieces.js?v=6';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=6';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -403,21 +403,37 @@ function selectMode(mode, scroll = true) {
   if (scroll) $('#mode-config').scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
 }
 
-function startOfflineGame() {
+async function startOfflineGame() {
   unlockAudio();
   sfx.click();
   const me = currentProfile();
   if (!me) { openModal('modal-onboarding'); return; }
-  let cfg;
+  let cfg, opp, modeLabel, oppSub, sub;
   if (selectedMode === 'ai') {
     const s = cfgState.ai;
     const t = timeById(s.time);
-    cfg = { mode: 'ai', myColor: resolveColor(s.color), difficulty: s.diff, timeMs: t.ms, incMs: t.inc, me, net: null };
+    const myColor = resolveColor(s.color);
+    const lvName = (AI_LEVELS.find((l) => l.id === s.diff) || {}).name || s.diff;
+    opp = { name: AI_NAMES[s.diff] || 'Komputer', username: 'komputer', avatar: { type: 'preset', data: '🤖' }, bot: true };
+    cfg = { mode: 'ai', myColor, difficulty: s.diff, timeMs: t.ms, incMs: t.inc, me, net: null };
+    modeLabel = '🤖 VS KOMPUTER • ' + lvName.toUpperCase();
+    oppSub = 'Level ' + lvName;
+    sub = `⏱️ ${t.label} • Kamu: ${myColor === 'w' ? '⬜ Putih' : '⬛ Hitam'}`;
   } else if (selectedMode === 'local') {
     const s = cfgState.local;
     const t = timeById(s.time);
+    opp = { name: 'Teman (Tamu)', username: 'tamu', avatar: { type: 'preset', data: '👤' }, guest: true };
     cfg = { mode: 'local', myColor: s.color, timeMs: t.ms, incMs: t.inc, me, net: null };
+    modeLabel = '👥 VS TEMAN • SATU LAYAR';
+    oppSub = '@tamu • main di HP ini';
+    sub = `⏱️ ${t.label} • Kamu: ${s.color === 'w' ? '⬜ Putih' : '⬛ Hitam'}`;
   } else return;
+  const r = rankForStars(store.stats.stars || 0);
+  await showVsSplash({
+    me, opp,
+    meSub: `${r.icon} ${r.name} • ⭐ ${store.stats.stars || 0}`,
+    oppSub, modeLabel, sub,
+  });
   cleanupGame();
   $('#panel-chat').hidden = true;
   showScreen('game');
@@ -635,8 +651,8 @@ function onLobbyNetClose() {
   }
 }
 
-function startOnlineGame() {
-  if (!lobby) return;
+async function startOnlineGame() {
+  if (!lobby || lobby.started) return;
   lobby.started = true;
   const me = currentProfile();
   const myColor = lobby.isHost ? lobby.config.hostColor : lobby.config.guestColor;
@@ -653,20 +669,42 @@ function startOnlineGame() {
   };
   // sematkan bintang lawan untuk tampilan
   cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0 };
-  net.onData = (msg) => game?.onNetMessage(msg);
+  net.onData = (msg) => (game ? game.onNetMessage(msg) : onLobbyNetData(msg));
   net.onClose = () => {
-    if (screen === 'lobby') { onLobbyNetClose(); return; }
+    if (!game) {
+      if (lobby) lobby.started = false;
+      onLobbyNetClose();
+      return;
+    }
     // game: kirim leave semu → game menangani klaim menang
-    game?.onNetMessage({ t: 'leave' });
+    game.onNetMessage({ t: 'leave' });
   };
+  if (lobby.isHost) {
+    net.send({ t: 'start', ...lobby.config });
+  }
   cleanupGame();
+  {
+    const me = currentProfile();
+    const r = rankForStars(store.stats.stars || 0);
+    const or = rankForStars(cfg.opp.stars || 0);
+    await showVsSplash({
+      me,
+      opp: cfg.opp,
+      meSub: `${r.icon} ${r.name} • ⭐ ${store.stats.stars || 0}`,
+      oppSub: `${or.icon} ${or.name} • ⭐ ${cfg.opp.stars || 0}`,
+      modeLabel: '🌐 ONLINE 1 VS 1',
+      sub: `⏱️ ${lobby.config.timeLabel} • Kamu: ${myColor === 'w' ? '⬜ Putih' : '⬛ Hitam'}`,
+    });
+  }
+  if (!lobby || !net || !net.connected) {
+    toast('Lawan terputus sebelum mulai 📡', 'error');
+    goMenu();
+    return;
+  }
   $('#panel-chat').hidden = false;
   $('#game-chat-messages').innerHTML = '';
   showScreen('game');
   game = new Game(cfg, { onMenu: goMenu });
-  if (lobby.isHost) {
-    net.send({ t: 'start', ...lobby.config });
-  }
   game.start();
   toast('Pertandingan dimulai! ⚔️', 'gold');
 }

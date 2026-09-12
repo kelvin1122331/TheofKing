@@ -1,9 +1,9 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=5';
-import { rankForStars, rankProgress } from './ranks.js?v=5';
-import { sfx } from './sound.js?v=5';
+import { avatarGradientFor, initialsFor } from './store.js?v=6';
+import { rankForStars, rankProgress } from './ranks.js?v=6';
+import { sfx } from './sound.js?v=6';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -134,6 +134,45 @@ export function starRowHTML(stars) {
     out += `<span class="${i < p.filled ? 'on' : 'off'}">★</span>`;
   }
   return out;
+}
+
+// ------------------------- VS Splash -------------------------
+const VS_MS = 2800; // sinkron dengan animasi .vs-bar di CSS
+
+/**
+ * Tampilkan intro "VS" sebelum pertandingan. Resolve saat selesai/dilewati.
+ * @param {object} o { me, opp, meSub, oppSub, modeLabel, sub }
+ */
+export function showVsSplash(o = {}) {
+  return new Promise((resolve) => {
+    const ov = document.getElementById('vs-splash');
+    if (!ov) { resolve(); return; }
+    document.getElementById('vs-mode').textContent = o.modeLabel || 'Pertandingan';
+    document.getElementById('vs-me-avatar').innerHTML = avatarHTML(o.me, 84);
+    document.getElementById('vs-me-name').textContent = (o.me && o.me.name) || 'Kamu';
+    document.getElementById('vs-me-rank').innerHTML = o.meSub || '';
+    document.getElementById('vs-opp-avatar').innerHTML = avatarHTML(o.opp, 84);
+    document.getElementById('vs-opp-name').textContent = (o.opp && o.opp.name) || 'Lawan';
+    document.getElementById('vs-opp-rank').innerHTML = o.oppSub || '';
+    document.getElementById('vs-sub').textContent = o.sub || '';
+    ov.style.display = 'flex';
+    ov.classList.remove('play');
+    void ov.offsetWidth; // paksa reflow agar animasi mengulang
+    ov.classList.add('play');
+    sfx.versus();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      ov.classList.remove('play');
+      ov.style.display = 'none';
+      ov.onclick = null;
+      resolve();
+    };
+    ov.onclick = () => { sfx.click(); finish(); };
+    const timer = setTimeout(finish, VS_MS);
+  });
 }
 
 // ------------------------- Confetti -------------------------
