@@ -2,19 +2,19 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=22';
-import { Board } from './board.js?v=22';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=22';
-import { sfx } from './sound.js?v=22';
-import { store, saveStats, pushRecent } from './store.js?v=22';
-import { applyResult, rankForStars } from './ranks.js?v=22';
+import { Chess } from './vendor/chess.js?v=23';
+import { Board } from './board.js?v=23';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=23';
+import { sfx } from './sound.js?v=23';
+import { store, saveStats, pushRecent } from './store.js?v=23';
+import { applyResult, rankForStars } from './ranks.js?v=23';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog,
-} from './ui.js?v=22';
-import { pieceSrc } from './pieces.js?v=22';
-import { flagFor } from './countries.js?v=22';
-import { applySkin, skinById } from './skins.js?v=22';
+} from './ui.js?v=23';
+import { pieceSrc } from './pieces.js?v=23';
+import { flagFor } from './countries.js?v=23';
+import { applySkin, skinById } from './skins.js?v=23';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -102,6 +102,7 @@ export class Game {
   meFirst() { return this.cfg.myColor === 'w'; }
 
   oppProfile() {
+    if (this.cfg.rankedBot) return this.cfg.rankedBot;
     if (this.cfg.mode === 'ai') {
       const lv = this.cfg.difficulty || 'medium';
       return { name: AI_NAMES[lv] || 'Komputer', username: 'komputer', avatar: { type: 'preset', data: '🤖' }, bot: true };
@@ -377,14 +378,15 @@ export class Game {
     else if (outcome === 'loss') sfx.lose();
     else sfx.draw();
 
-    // proteksi bintang + rating + koin
+    // proteksi bintang + rating + koin (bintang hanya dari Ranked & Online)
+    const rankedGame = this.cfg.mode === 'online' || !!this.cfg.rankedBot;
     const stats = store.stats;
     let isProtected = false;
-    if (outcome === 'loss' && (stats.protections || 0) > 0) {
+    if (rankedGame && outcome === 'loss' && (stats.protections || 0) > 0) {
       stats.protections -= 1;
       isProtected = true;
     }
-    const delta = applyResult(stats, outcome, { protect: isProtected });
+    const delta = applyResult(stats, outcome, { protect: isProtected, noStars: !rankedGame });
     delta.protected = isProtected;
     let coinsEarned = 0;
     if (outcome === 'win') {
@@ -394,7 +396,7 @@ export class Game {
     saveStats(stats);
     pushRecent({
       result: outcome, reason,
-      mode: this.cfg.mode,
+      mode: this.cfg.rankedBot ? 'ranked' : this.cfg.mode,
       opp: oppSnapshot(this.oppProfile()),
       moves: this.chess.history().length,
     });
@@ -538,7 +540,7 @@ export class Game {
     const inCheck = this.chess.isCheck();
     let label;
     if (this.cfg.mode === 'ai') {
-      if (this.aiThinking) label = `🤖 ${esc(this.oppProfile().name)} sedang berpikir…`;
+      if (this.aiThinking) label = this.cfg.rankedBot ? `${esc(this.oppProfile().name)} sedang berpikir…` : `🤖 ${esc(this.oppProfile().name)} sedang berpikir…`;
       else label = t === this.cfg.myColor ? `Giliranmu (${COLOR_NAME[t]})` : `Giliran ${COLOR_NAME[t]}`;
     } else if (this.cfg.mode === 'local') {
       label = `Giliran: ${COLOR_NAME[t]} ${t === 'w' ? '⬜' : '⬛'}`;
@@ -569,7 +571,8 @@ export class Game {
   async onResign() {
     if (this.finished || !this.running) return;
     sfx.click();
-    const ok = await confirmDialog({ title: 'Menyerah?', message: 'Kamu akan kalah dan kehilangan 1 ⭐. Yakin?', ok: 'Ya, menyerah', cancel: 'Lanjut main' });
+    const rankedGame = this.cfg.mode === 'online' || !!this.cfg.rankedBot;
+    const ok = await confirmDialog({ title: 'Menyerah?', message: rankedGame ? 'Kamu akan kalah dan kehilangan 1 ⭐. Yakin?' : 'Kamu akan kalah. Yakin?', ok: 'Ya, menyerah', cancel: 'Lanjut main' });
     if (!ok) return;
     if (this.cfg.mode === 'online') {
       this.cfg.net?.send({ t: 'resign' });
@@ -601,10 +604,10 @@ export class Game {
     // vs AI: komputer menerima jika posisinya tidak lebih bagus
     const evalMe = evaluateFor(this.chess.fen(), this.cfg.myColor);
     if (evalMe >= -60) {
-      toast('🤖 Komputer menolak remis. Lanjut berjuang!');
+      toast(this.cfg.rankedBot ? 'Lawan menolak remis. Lanjut berjuang!' : '🤖 Komputer menolak remis. Lanjut berjuang!');
       sfx.notify();
     } else {
-      toast('🤖 Komputer menerima remis.');
+      toast(this.cfg.rankedBot ? 'Lawan menerima remis.' : '🤖 Komputer menerima remis.');
       this.finish('draw', 'agreement');
     }
   }
@@ -664,7 +667,11 @@ export class Game {
     const sr = $('#result-stars');
     if (delta.starDelta > 0) sr.innerHTML = `<span class="pop">⭐</span><span style="font-size:1.1rem;font-weight:800;color:var(--green)">+1 bintang!</span>`;
     else if (delta.starDelta < 0) sr.innerHTML = `<span class="pop">💫</span><span style="font-size:1.1rem;font-weight:800;color:var(--red)">−1 bintang</span>`;
-    else sr.innerHTML = `<span style="font-size:1rem;color:var(--muted)">Bintang tetap ⭐ ${store.stats.stars}</span>`;
+    else {
+      const unrankedNote = (this.cfg.mode !== 'online' && !this.cfg.rankedBot)
+        ? `<div class="muted small" style="margin-top:4px">Mode santai — bintang hanya dari Ranked & Online ⭐</div>` : '';
+      sr.innerHTML = `<span style="font-size:1rem;color:var(--muted)">Bintang tetap ⭐ ${store.stats.stars}</span>` + unrankedNote;
+    }
 
     if (coinsEarned > 0) sr.innerHTML += `<div class="result-coins">🪙 +${coinsEarned} koin!</div>`;
     if (delta.protected) sfx.notify();

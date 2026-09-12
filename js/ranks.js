@@ -48,17 +48,22 @@ export function rankProgress(stars) {
  */
 export function applyResult(stats, result, opts = {}) {
   const before = rankForStars(stats.stars);
+  const noStars = !!opts.noStars; // mode santai (vs komputer/teman): bintang tak berubah
   let starDelta = 0;
   stats.games = (stats.games || 0) + 1;
   if (result === 'win') {
     stats.wins = (stats.wins || 0) + 1;
-    stats.stars = (stats.stars || 0) + 1;
+    if (!noStars) {
+      stats.stars = (stats.stars || 0) + 1;
+      starDelta = 1;
+    }
     stats.streak = (stats.streak || 0) + 1;
     stats.bestStreak = Math.max(stats.bestStreak || 0, stats.streak);
-    starDelta = 1;
   } else if (result === 'loss') {
     stats.losses = (stats.losses || 0) + 1;
-    if (opts.protect) {
+    if (noStars) {
+      starDelta = 0; // santai: kalah pun bintang aman
+    } else if (opts.protect) {
       starDelta = 0; // dilindungi Star Protection: bintang aman
     } else {
       stats.stars = Math.max(0, (stats.stars || 0) - 1);

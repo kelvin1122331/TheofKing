@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=22" />
+  <link rel="stylesheet" href="css/style.css?v=23" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -194,8 +194,8 @@
         </article>
         <article class="mode-card" data-mode="arena" tabindex="0">
           <div class="mode-icon">⚔️</div>
-          <h3>Arena</h3>
-          <p>Otomatis dicarikan lawan acak dengan rank yang sama.</p>
+          <h3>Ranked</h3>
+          <p>Lawan acak se-rank. Menang +1 ⭐, kalah −1 ⭐.</p>
           <span class="mode-tag on">📶 ONLINE</span>
         </article>
       </div>
@@ -471,10 +471,11 @@
   <div class="modal-backdrop" id="modal-arena" hidden style="display:none">
     <div class="modal modal-arena">
       <div class="arena-spin">⚔️</div>
-      <h2>Arena Online</h2>
+      <h2>⚔️ Ranked</h2>
       <div class="arena-rank" id="arena-rank">–</div>
       <div class="arena-status" id="arena-status">Mencari lawan…</div>
       <div class="arena-elapsed muted small" id="arena-elapsed">⏱️ 0 dtk</div>
+      <div class="muted small">⏱️ Tak ada lawan dalam 30 dtk → lawan pengganti otomatis</div>
       <button class="btn btn-danger-ghost btn-block" id="btn-arena-cancel" type="button">✕ Batal Cari</button>
     </div>
   </div>
@@ -684,7 +685,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=22"></script>
-  <script type="module" src="js/app.js?v=22"></script>
+  <script src="js/vendor/peerjs.min.js?v=23"></script>
+  <script type="module" src="js/app.js?v=23"></script>
 </body>
 </html>

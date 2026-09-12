@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=22';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=22';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=22';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=22';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=22';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=22';
-import { Game } from './game.js?v=22';
-import { preloadPieces } from './pieces.js?v=22';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=22';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=22';
-import { SKINS, skinById, applySkin } from './skins.js?v=22';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=22';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=23';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=23';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=23';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=23';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=23';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=23';
+import { Game } from './game.js?v=23';
+import { preloadPieces } from './pieces.js?v=23';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=23';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=23';
+import { SKINS, skinById, applySkin } from './skins.js?v=23';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=23';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -141,7 +141,7 @@ function renderRecent() {
   const panel = $('#recent-panel');
   if (!list.length) { panel.hidden = true; return; }
   panel.hidden = false;
-  const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online' };
+  const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online', ranked: 'Ranked' };
   const resName = { win: 'Menang', loss: 'Kalah', draw: 'Seri' };
   $('#recent-list').innerHTML = list.map((r, i) => `
     <div class="recent-item" data-ri="${i}" style="cursor:pointer" title="Lihat detail">
@@ -493,10 +493,11 @@ function renderModeConfig() {
   } else if (selectedMode === 'arena') {
     const r = rankForStars(store.stats.stars || 0);
     box.innerHTML = `
-      <h3>⚔️ Arena Online <span class="muted small">— lawan acak se-rank, otomatis</span></h3>
+      <h3>⚔️ Ranked <span class="muted small">— lawan acak se-rank, otomatis</span></h3>
       <div class="arena-info">
         <div>🏅 Rank kamu: <b>${r.icon} ${r.name}</b> • ⭐ ${store.stats.stars || 0}</div>
         <div class="muted small">🎲 Warna acak • ⏱️ ${ARENA_TIME.label} • menang/kalah memengaruhi ⭐</div>
+        <div class="muted small">⏱️ Tak ada lawan dalam 30 dtk → otomatis dicarikan lawan pengganti</div>
       </div>
       <button class="btn btn-gold btn-lg btn-block" id="btn-arena-search">⚔️ Cari Lawan Se-Rank</button>`;
     $('#btn-arena-search').addEventListener('click', startArenaSearch);
@@ -699,6 +700,7 @@ function endArenaSearch() {
   clearInterval(arena.elapsedTimer);
   clearInterval(arena.bucketWatch);
   clearTimeout(arena.serverFallbackT);
+  clearTimeout(arena.botFallbackT);
   if (arenaSocket) { try { arenaSocket.close(); } catch { /* abaikan */ } arenaSocket = null; }
   arena = null;
 }
@@ -719,6 +721,77 @@ function arenaFail(msg) {
   toast(msg, 'error');
 }
 
+// ------------------------- ranked: fallback bot -------------------------
+// Nama samaran bot ranked — dibuat seperti akun pemain asli.
+const RANKED_BOT_NAMES = [
+  ['Raka Pratama', 'raka_pratama'], ['Dimas Saputra', 'dimas_saputra'],
+  ['Fajar Nugroho', 'fajar_nugroho'], ['Bima Sakti', 'bima_sakti'],
+  ['Arka Wijaya', 'arka_wijaya'], ['Galih Permana', 'galih_permana'],
+  ['Yoga Aditya', 'yoga_aditya'], ['Rizky Ramadhan', 'rizky_ramadhan'],
+  ['Ilham Maulana', 'ilham_maulana'], ['Farhan Aziz', 'farhan_aziz'],
+  ['Bagas Setiawan', 'bagas_setiawan'], ['Eko Saputra', 'eko_saputra'],
+  ['Satria Wibowo', 'satria_wibowo'], ['Nadia Putri', 'nadia_putri'],
+  ['Sinta Dewi', 'sinta_dewi'], ['Ayu Lestari', 'ayu_lestari'],
+  ['KnightRider', 'knightrider'], ['SilentKnight', 'silentknight'],
+  ['PawnStorm', 'pawnstorm'], ['RajaBlitz', 'rajablitz'],
+  ['SkakMatt', 'skakmatt'], ['KudaHitam', 'kudahitam'],
+  ['BidakEmas', 'bidakemas'], ['DewaCatur', 'dewacatur'],
+  ['MasterSkak', 'masterskak'], ['KsatriaMalam', 'ksatriamalam'],
+  ['LangkahBayangan', 'langkahbayangan'], ['TaktikPetir', 'taktikpetir'],
+];
+const RANKED_BOT_COUNTRIES = ['ID', 'ID', 'ID', 'ID', 'MY', 'SG', 'PH', 'IN', 'BR', 'US', null];
+
+function rankedBotProfile() {
+  const [name, username] = RANKED_BOT_NAMES[Math.floor(Math.random() * RANKED_BOT_NAMES.length)];
+  const faces = PRESET_AVATARS.filter((e) => e !== '🤖');
+  const face = faces[Math.floor(Math.random() * faces.length)];
+  const myStars = store.stats.stars || 0;
+  return {
+    name, username,
+    avatar: { type: 'preset', data: face },
+    country: RANKED_BOT_COUNTRIES[Math.floor(Math.random() * RANKED_BOT_COUNTRIES.length)],
+    stars: Math.max(0, myStars + (Math.floor(Math.random() * 5) - 2)),
+    streak: Math.floor(Math.random() * 5),
+  };
+}
+
+/** Tak dapat lawan 30 dtk → otomatis lawan bot (sedang/sulit acak), tetap dihitung ranked. */
+function arenaBotFallback() {
+  if (!arena?.active || arena.matched || game || lobby?.started) return;
+  if (lobby?.arena && (lobby.isHost ? !!lobby.guest : !!lobby.host)) return; // sudah dapat lawan asli
+  const diff = Math.random() < 0.5 ? 'medium' : 'hard';
+  const bot = rankedBotProfile();
+  endArenaSearch();
+  cleanupNet();
+  lobby = null;
+  closeModal('modal-arena');
+  startRankedBotGame(bot, diff);
+}
+
+async function startRankedBotGame(bot, diff) {
+  const me = currentProfile();
+  if (!me) { goMenu(); return; }
+  const myColor = Math.random() < 0.5 ? 'w' : 'b';
+  const cfg = { mode: 'ai', myColor, difficulty: diff, timeMs: ARENA_TIME.ms, incMs: ARENA_TIME.inc, me, net: null, rankedBot: bot };
+  const r = rankForStars(store.stats.stars || 0);
+  const or = rankForStars(bot.stars || 0);
+  await showVsSplash({
+    me, opp: bot,
+    meSub: `${r.icon} ${r.name} • ⭐ ${store.stats.stars || 0}`,
+    oppSub: `${or.icon} ${or.name} • ⭐ ${bot.stars || 0}`,
+    modeLabel: '⚔️ RANKED',
+    sub: `⏱️ ${ARENA_TIME.label} • Kamu: ${myColor === 'w' ? '⬜ Putih' : '⬛ Hitam'}`,
+    meStreak: store.stats.streak || 0,
+    oppStreak: bot.streak || 0,
+  });
+  cleanupGame();
+  $('#panel-chat').hidden = true;
+  showScreen('game');
+  game = new Game(cfg, { onMenu: goMenu });
+  game.start();
+  toast(`Lawan ditemukan: ${bot.name}! Semangat! ⚔️`, 'gold');
+}
+
 async function startArenaSearch() {
   unlockAudio();
   sfx.click();
@@ -726,7 +799,7 @@ async function startArenaSearch() {
   if (!me) { openModal('modal-onboarding'); return; }
   if (arena?.active) return;
   if (typeof Peer === 'undefined') {
-    toast('Butuh internet untuk Arena. Periksa koneksi lalu coba lagi 📶', 'error');
+    toast('Butuh internet untuk Ranked. Periksa koneksi lalu coba lagi 📶', 'error');
     return;
   }
   if (isServerOnline()) { startArenaServer(); return; }
@@ -737,6 +810,8 @@ async function startArenaSearch() {
   document.getElementById('arena-elapsed').textContent = '⏱️ 0 dtk';
   openModal('modal-arena');
   arena.elapsedTimer = setInterval(updateArenaElapsed, 1000);
+  arena.botFallbackT = setTimeout(arenaBotFallback, (typeof window !== 'undefined' && window.__RANKED_BOT_MS) || 30000);
+  if (arena.botFallbackT?.unref) arena.botFallbackT.unref();
   arena.bucketWatch = setInterval(() => {
     if (!arena?.active || arena.server || lobby?.started || game) return;
     const matched = lobby && (lobby.isHost ? !!lobby.guest : true);
@@ -761,6 +836,8 @@ async function startArenaServer() {
   document.getElementById('arena-elapsed').textContent = '⏱️ 0 dtk';
   openModal('modal-arena');
   arena.elapsedTimer = setInterval(updateArenaElapsed, 1000);
+  arena.botFallbackT = setTimeout(arenaBotFallback, (typeof window !== 'undefined' && window.__RANKED_BOT_MS) || 30000);
+  if (arena.botFallbackT?.unref) arena.botFallbackT.unref();
   arena.bucketWatch = setInterval(() => {
     if (!arena?.active || arena.server || lobby?.started || game) return;
     const matched = lobby && (lobby.isHost ? !!lobby.guest : true);
@@ -828,7 +905,7 @@ async function searchArenaRound() {
   arena.server = false;
   arena.matched = false;
   const code = arenaCodeFor(myRankId(), Date.now() + arena.fullOffset * ARENA_BUCKET_MS);
-  setArenaStatus(arena.fullOffset > 0 ? 'Arena penuh, cari slot lain…' : 'Mencari lawan se-rank…');
+  setArenaStatus(arena.fullOffset > 0 ? 'Slot penuh, cari slot lain…' : 'Mencari lawan se-rank…');
   guestArenaJoin(code, round);
 }
 
@@ -1389,7 +1466,7 @@ function openMatchModal(r) {
   const st = store.stats || {};
   const o = (r.opp && typeof r.opp === 'object') ? r.opp : { name: (typeof r.opp === 'string' && r.opp) || 'Lawan' };
   const big = r.result === 'win' ? ['MENANG 🎉', 'win'] : r.result === 'loss' ? ['KALAH 😞', 'loss'] : ['SERI 🤝', 'draw'];
-  const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online' };
+  const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online', ranked: 'Ranked' };
   const dt = r.at ? new Date(r.at) : null;
   const when = dt && !isNaN(dt) ? dt.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   const REASON_ID = { checkmate: 'Skakmat', resign: 'Menyerah', timeout: 'Waktu habis', agreement: 'Sepakat seri', stalemate: 'Stalemate', fifty: 'Aturan 50 langkah', material: 'Buah tidak cukup' };
