@@ -2,17 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=15';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=15';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=15';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=15';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=15';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=15';
-import { Game } from './game.js?v=15';
-import { preloadPieces } from './pieces.js?v=15';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=15';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=15';
-import { SKINS, skinById, applySkin } from './skins.js?v=15';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=16';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=16';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=16';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=16';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=16';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=16';
+import { Game } from './game.js?v=16';
+import { preloadPieces } from './pieces.js?v=16';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=16';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=16';
+import { SKINS, skinById, applySkin } from './skins.js?v=16';
+import { BORDERS, AVATARS, borderById, avatarById, avatarImg } from './cosmetics.js?v=16';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -234,7 +235,9 @@ function renderPresetGrid(rootId, previewId) {
 function updateAvatarPreview(previewId, nameVal = '') {
   const pv = $(previewId);
   const name = nameVal || $('#ob-name')?.value || $('#pf-name')?.value || '?';
-  if (avatarDraft.type === 'upload' && avatarDraft.data) {
+  if (avatarDraft.type === 'premium' && avatarDraft.data) {
+    pv.innerHTML = `<img src="${avatarImg(avatarDraft.data)}" alt="avatar" />`;
+  } else if (avatarDraft.type === 'upload' && avatarDraft.data) {
     pv.innerHTML = `<img src="${avatarDraft.data}" alt="foto" />`;
   } else if (avatarDraft.type === 'preset' && avatarDraft.data) {
     pv.textContent = avatarDraft.data;
@@ -395,7 +398,7 @@ function renderLeaderboard() {
       const myId = currentProfile()?.id;
       paintLeaderboard(lb.players.map((x, i) => ({
         id: x.id, name: x.name, username: x.username, avatar: x.avatar, bot: false,
-        me: !!myId && x.id === myId, country: x.country || null,
+        me: !!myId && x.id === myId, country: x.country || null, avatarBorder: x.avatarBorder || null,
         stars: x.stars, streak: x.streak, rank: rankForStars(x.stars), pos: i + 1,
       })), lb.meRank);
     }).catch(() => { /* tetap tampilkan lokal */ });
@@ -588,7 +591,7 @@ async function linkAccount() {
   } catch (e) {
     if (e.code === 404 && !isServerReadonly()) {
       try {
-        await Server.register({ id: p.id, username: p.username, name: p.name, avatar: p.avatar, country: p.country });
+        await Server.register({ id: p.id, username: p.username, name: p.name, avatar: p.avatar, country: p.country, avatarBorder: p.avatarBorder || null });
         schedulePush();
       } catch (e2) {
         if (e2.code === 409) {
@@ -610,11 +613,13 @@ async function pullAccount() {
 }
 
 function applyServerAccount(a) {
-  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, createdAt: store.profile?.createdAt || Date.now() };
+  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, createdAt: store.profile?.createdAt || Date.now() };
   store.stats = { ...a.stats, _rev: a.rev || 0 };
   const s = store.settings;
   if (a.settings?.skin) s.skin = a.settings.skin;
   if (Array.isArray(a.settings?.skins)) s.skins = a.settings.skins;
+  if (Array.isArray(a.settings?.borders)) s.borders = a.settings.borders;
+  if (Array.isArray(a.settings?.avatars)) s.avatars = a.settings.avatars;
   store.settings = s;
   store.friends = Array.isArray(a.friends) ? a.friends : [];
   refreshStats();
@@ -637,9 +642,9 @@ async function pushAccount() {
     const rev = (st._rev || 0) + 1;
     const set = store.settings;
     const { account } = await Server.push(p.id, {
-      profile: { name: p.name, username: p.username, avatar: p.avatar, country: p.country },
+      profile: { name: p.name, username: p.username, avatar: p.avatar, country: p.country, avatarBorder: p.avatarBorder || null },
       stats: { ...st },
-      settings: { skin: set.skin, skins: set.skins },
+      settings: { skin: set.skin, skins: set.skins, borders: set.borders, avatars: set.avatars },
       friends: store.friends,
       rev,
     });
@@ -1344,7 +1349,7 @@ async function resolveAdminTargetAsync() {
   if (isServerOnline() && adminToken) {
     try {
       const { account } = await Server.adminFind(adminToken, q);
-      return { server: true, name: account.name, username: account.username, id: account.id, stars: account.stats.stars };
+      return { server: true, name: account.name, username: account.username, id: account.id, stars: account.stats.stars, coins: account.stats.coins || 0 };
     } catch { return null; }
   }
   return resolveAdminTarget();
@@ -1359,7 +1364,7 @@ async function renderAdminTarget() {
   const t = await resolveAdminTargetAsync();
   if (seq !== admTargetSeq || document.getElementById('adm-target').value.trim() !== q) return;
   if (t) {
-    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})${t.server ? ' 🌐' : ''}<br>⭐ saat ini: <b>${t.server ? t.stars : (store.stats.stars || 0)}</b>`;
+    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})${t.server ? ' 🌐' : ''}<br>⭐ saat ini: <b>${t.server ? t.stars : (store.stats.stars || 0)}</b> • 🪙: <b>${t.server ? t.coins : (store.stats.coins || 0)}</b>`;
   } else {
     box.innerHTML = hint;
   }
@@ -1408,6 +1413,45 @@ async function applyAdminStars(mode) {
   renderAdminLog();
   sfx.buy();
   toast(mode === 'set' ? `Bintang @${t.username} jadi ${st.stars}! 🎯` : `+${n} ⭐ untuk @${t.username}!`, 'success');
+}
+
+async function applyAdminCoins(mode) {
+  const t = await resolveAdminTargetAsync();
+  const er = document.getElementById('adm-error2');
+  const scope = (isServerOnline() && adminToken) ? 'di server' : 'di perangkat ini';
+  if (!t) { er.textContent = `Akun tidak ditemukan ${scope} 🔍`; er.hidden = false; sfx.illegal(); return; }
+  const n = Math.floor(Number(document.getElementById('adm-amount-coin').value));
+  const lo = mode === 'set' ? 0 : 1;
+  if (!Number.isFinite(n) || n < lo || n > 999999) {
+    er.textContent = mode === 'set' ? 'Koin harus 0–999999 🎯' : 'Koin harus 1–999999 ➕';
+    er.hidden = false; sfx.illegal(); return;
+  }
+  er.hidden = true;
+  if (t.server && adminToken) {
+    try {
+      const r = await Server.adminCoins(adminToken, document.getElementById('adm-target').value.trim(), mode, n);
+      adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${r.account.username}: ${r.before} → ${r.after} 🪙 🌐`);
+      if (r.account.id === currentProfile()?.id) pullAccount();
+      renderAdminTarget();
+      renderAdminLog();
+      sfx.buy();
+      toast(mode === 'set' ? `Koin @${r.account.username} jadi ${r.after}! 🎯` : `+${n} 🪙 untuk @${r.account.username}!`, 'success');
+    } catch (e2) {
+      er.textContent = e2.code === 404 ? 'Akun tidak ditemukan di server 🔍' : 'Server sibuk, coba lagi.';
+      er.hidden = false; sfx.illegal();
+    }
+    return;
+  }
+  const st = store.stats;
+  const before = st.coins || 0;
+  st.coins = mode === 'set' ? n : before + n;
+  saveStats(st);
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${t.username}: ${before} → ${st.coins} 🪙`);
+  renderAdminTarget();
+  renderAdminLog();
+  sfx.buy();
+  toast(mode === 'set' ? `Koin @${t.username} jadi ${st.coins}! 🎯` : `+${n} 🪙 untuk @${t.username}!`, 'success');
 }
 
 function adminLogout() {
@@ -1476,6 +1520,139 @@ function renderShop() {
   }).join('');
   grid.querySelectorAll('[data-buy]').forEach((x) => { x.onclick = () => buySkin(x.dataset.buy); });
   grid.querySelectorAll('[data-equip]').forEach((x) => { x.onclick = () => equipSkin(x.dataset.equip); });
+  paintShopTabs();
+  renderBordersGrid();
+  renderAvatarsGrid();
+}
+
+let shopTab = 'prot';
+
+function paintShopTabs() {
+  document.querySelectorAll('#shop-tabs .tab').forEach((t) => {
+    t.classList.toggle('active', t.dataset.shopTab === shopTab);
+    t.onclick = () => { shopTab = t.dataset.shopTab; sfx.click(); paintShopTabs(); };
+  });
+  for (const id of ['prot', 'skins', 'borders', 'avatars']) {
+    document.getElementById('shop-pane-' + id).hidden = shopTab !== id;
+  }
+}
+
+function ownedBorders() {
+  const s = store.settings.borders;
+  if (!Array.isArray(s) || !s.length) return ['none'];
+  const known = new Set(BORDERS.map((x) => x.id));
+  return [...new Set(['none', ...s.filter((id) => known.has(id))])];
+}
+
+function ownedAvatars() {
+  const s = store.settings.avatars;
+  if (!Array.isArray(s)) return [];
+  const known = new Set(AVATARS.map((x) => x.id));
+  return [...new Set(s.filter((id) => known.has(id)))];
+}
+
+function equippedBorder() {
+  return currentProfile()?.avatarBorder || 'none';
+}
+
+function equippedAvatarId() {
+  const av = currentProfile()?.avatar;
+  return av?.type === 'premium' ? av.data : null;
+}
+
+function cosButton(kind, item, has, isEq, coins) {
+  if (isEq) return `<button class="btn btn-gold btn-sm" disabled>✓ Dipakai</button>`;
+  if (has) return `<button class="btn btn-outline btn-sm" data-eq-${kind}="${item.id}">Pakai</button>`;
+  return `<button class="btn btn-gold btn-sm" data-buy-${kind}="${item.id}" ${coins < item.price ? 'disabled' : ''}>Beli — ${item.price} 🪙</button>`;
+}
+
+function renderBordersGrid() {
+  const coins = store.stats.coins || 0;
+  const eq = equippedBorder();
+  const owned = ownedBorders();
+  const me = currentProfile() || { name: '?', username: '?' };
+  const grid = document.getElementById('borders-grid');
+  grid.innerHTML = BORDERS.map((bd) => {
+    const has = owned.includes(bd.id);
+    const isEq = eq === bd.id;
+    return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
+      <div class="cos-prev"><span class="avatar-wrap${bd.id === 'none' ? '' : ' ava-border-' + bd.id}"><span class="avatar" style="width:40px;height:40px;font-size:18px;background:${avatarGradientFor(me.username)}">${esc(initialsFor(me.name))}</span></span></div>
+      <div class="skin-name">${esc(bd.name)}</div>
+      <div class="skin-desc">${esc(bd.desc)}</div>
+      ${cosButton('border', bd, has, isEq, coins)}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-buy-border]').forEach((x) => { x.onclick = () => buyBorder(x.dataset.buyBorder); });
+  grid.querySelectorAll('[data-eq-border]').forEach((x) => { x.onclick = () => equipBorder(x.dataset.eqBorder); });
+}
+
+function renderAvatarsGrid() {
+  const coins = store.stats.coins || 0;
+  const eq = equippedAvatarId();
+  const owned = ownedAvatars();
+  const grid = document.getElementById('avatars-grid');
+  grid.innerHTML = AVATARS.map((x) => {
+    const has = owned.includes(x.id);
+    const isEq = eq === x.id;
+    return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
+      <div class="cos-prev"><img class="cos-ava" src="${avatarImg(x.id)}" alt="${esc(x.name)}" /></div>
+      <div class="skin-name">${x.emoji} ${esc(x.name)}</div>
+      <div class="skin-desc">Avatar spesial</div>
+      ${cosButton('avatar', x, has, isEq, coins)}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-buy-avatar]').forEach((x) => { x.onclick = () => buyAvatar(x.dataset.buyAvatar); });
+  grid.querySelectorAll('[data-eq-avatar]').forEach((x) => { x.onclick = () => equipAvatar(x.dataset.eqAvatar); });
+}
+
+function buyBorder(id) {
+  const b = borderById(id);
+  if (!b) return;
+  const cur = store.stats;
+  if ((cur.coins || 0) < b.price) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
+  cur.coins -= b.price;
+  saveStats(cur);
+  const st = store.settings;
+  st.borders = [...new Set([...ownedBorders(), id])];
+  store.settings = st;
+  sfx.buy();
+  equipBorder(id, true);
+}
+
+function equipBorder(id, fromBuy = false) {
+  if (!borderById(id) || !ownedBorders().includes(id)) return;
+  const p = store.profile || {};
+  p.avatarBorder = id;
+  store.profile = p;
+  sfx.buy();
+  toast(fromBuy ? `🖼️ Bingkai ${borderById(id).name} dibeli & dipakai!` : `🖼️ Bingkai ${borderById(id).name} dipakai!`, 'success');
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  renderShop();
+}
+
+function buyAvatar(id) {
+  const x = avatarById(id);
+  if (!x) return;
+  const cur = store.stats;
+  if ((cur.coins || 0) < x.price) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
+  cur.coins -= x.price;
+  saveStats(cur);
+  const st = store.settings;
+  st.avatars = [...new Set([...ownedAvatars(), id])];
+  store.settings = st;
+  sfx.buy();
+  equipAvatar(id, true);
+}
+
+function equipAvatar(id, fromBuy = false) {
+  if (!avatarById(id) || !ownedAvatars().includes(id)) return;
+  const p = store.profile || {};
+  p.avatar = { type: 'premium', data: id };
+  store.profile = p;
+  sfx.buy();
+  toast(fromBuy ? `😎 Avatar ${avatarById(id).name} dibeli & dipakai!` : `😎 Avatar ${avatarById(id).name} dipakai!`, 'success');
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  renderShop();
 }
 
 function buySkin(id) {
@@ -1575,6 +1752,8 @@ function init() {
   $('#adm-target').addEventListener('input', renderAdminTarget);
   $('#adm-add').addEventListener('click', () => applyAdminStars('add'));
   $('#adm-set').addEventListener('click', () => applyAdminStars('set'));
+  $('#adm-add-coin').addEventListener('click', () => applyAdminCoins('add'));
+  $('#adm-set-coin').addEventListener('click', () => applyAdminCoins('set'));
   $('#adm-logout').addEventListener('click', adminLogout);
   $('#profile-chip').addEventListener('click', (e) => {
     sfx.click();

@@ -60,6 +60,7 @@ Alamat tersimpan otomatis di HP pemain.
 - `GET /api/leaderboard?by=stars|streak&me=:id` — peringkat global
 - `POST /api/admin/login` — `{user, pass}` → token
 - `GET /api/admin/find?q=` + `POST /api/admin/stars` — butuh header `X-Admin-Token`
+- `POST /api/admin/coins` — kelola koin `{target, mode, amount}` (butuh token)
 - `WS /ws` — antre arena: kirim `{t:'queue', id, rank, profile, stats}`,
   terima `{t:'matched', role, code, opp}` lalu sambung P2P seperti biasa.
 

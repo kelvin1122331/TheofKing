@@ -872,3 +872,20 @@ body { touch-action: manipulation; }
 }
 
 .server-status { font-size: 0.8rem; opacity: 0.9; white-space: nowrap; }
+
+/* ---------- bingkai avatar ---------- */
+.avatar-wrap { display: inline-flex; border-radius: 50%; padding: 2px; flex-shrink: 0; }
+.avatar-wrap[class*="ava-border-"] { padding: 3px; }
+.ava-border-gold { background: linear-gradient(135deg, #ffe27a, #b57e12); box-shadow: 0 0 10px rgba(245, 192, 68, 0.8); }
+.ava-border-ocean { background: linear-gradient(135deg, #7df9ff, #1d4ed8); box-shadow: 0 0 10px rgba(56, 189, 248, 0.8); }
+.ava-border-neon { background: linear-gradient(135deg, #22ffcc, #ff3df2); box-shadow: 0 0 12px rgba(34, 255, 204, 0.9); }
+.ava-border-fire { background: linear-gradient(135deg, #ffd200, #ff2e00); box-shadow: 0 0 12px rgba(255, 80, 0, 0.9); }
+.ava-border-royal { background: linear-gradient(135deg, #c084fc, #ffd166 60%, #7c3aed); box-shadow: 0 0 12px rgba(192, 132, 252, 0.9); }
+.ava-border-rainbow { background: conic-gradient(#ff4d4d, #ffe27a, #4dff88, #4dd2ff, #8b5cf6, #ff4dd2, #ff4d4d); animation: border-pulse 1.6s ease-in-out infinite; }
+@keyframes border-pulse { 50% { box-shadow: 0 0 18px rgba(255, 255, 255, 0.95); } }
+/* ---------- shop: tab & preview kosmetik ---------- */
+.shop-tabs { margin-top: 12px; }
+.shop-tabs .tab { font-size: 0.82rem; padding: 9px 4px; }
+.cos-prev { display: flex; justify-content: center; padding: 10px 0 6px; min-height: 76px; align-items: center; }
+.cos-prev .avatar-wrap { transform: scale(1.6); }
+.cos-ava { width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(245, 192, 68, 0.5); }

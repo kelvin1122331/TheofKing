@@ -65,6 +65,7 @@ function cleanProfile(p) {
       data: p.avatar && typeof p.avatar.data === 'string' ? p.avatar.data.slice(0, 300000) : null,
     },
     country: /^[A-Z]{2}$/.test(p.country || '') ? p.country : null,
+    avatarBorder: typeof p.avatarBorder === 'string' ? p.avatarBorder.slice(0, 24) : null,
   };
 }
 /** Tampilan publik: tanpa koin/proteksi/teman/settings lengkap. */
@@ -76,6 +77,7 @@ function publicAccount(a) {
       wins: a.stats.wins, losses: a.stats.losses, draws: a.stats.draws, games: a.stats.games,
     },
     skin: (a.settings && a.settings.skin) || 'wood',
+    avatarBorder: a.avatarBorder || null,
     rev: a.rev, updatedAt: a.updatedAt,
   };
 }
@@ -154,6 +156,7 @@ app.put('/api/account/:id', (req, res) => {
     if (p.name) a.name = p.name;
     a.avatar = p.avatar;
     a.country = p.country;
+    a.avatarBorder = p.avatarBorder;
   }
   if (b.stats) {
     const cs = cleanStats(b.stats);
@@ -163,6 +166,11 @@ app.put('/api/account/:id', (req, res) => {
     if (typeof b.settings.skin === 'string') a.settings.skin = b.settings.skin.slice(0, 24);
     if (Array.isArray(b.settings.skins)) {
       a.settings.skins = [...new Set(b.settings.skins.map(String).map((x) => x.slice(0, 24)))].slice(0, 24);
+    }
+    for (const k of ['borders', 'avatars']) {
+      if (Array.isArray(b.settings[k])) {
+        a.settings[k] = [...new Set(b.settings[k].map(String).map((x) => x.slice(0, 24)))].slice(0, 24);
+      }
     }
   }
   if (Array.isArray(b.friends)) {
@@ -182,7 +190,7 @@ app.get('/api/leaderboard', (req, res) => {
   const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 50));
   const all = Object.values(db.accounts).map((a) => ({
     id: a.id, name: a.name, username: a.username, avatar: a.avatar, country: a.country,
-    stars: a.stats.stars, streak: a.stats.streak,
+    stars: a.stats.stars, streak: a.stats.streak, avatarBorder: a.avatarBorder || null,
   }));
   all.sort((x, y) => (y[by] - x[by]) || (y.stars - x.stars));
   const me = String(req.query.me || '').toUpperCase();
@@ -229,6 +237,22 @@ app.post('/api/admin/stars', needAdmin, (req, res) => {
   a.updatedAt = Date.now();
   saveSoon();
   res.json({ before, after: a.stats.stars, account: ownerAccount(a) });
+});
+app.post('/api/admin/coins', needAdmin, (req, res) => {
+  const q = String((req.body && req.body.target) || '').replace(/^@/, '').toLowerCase();
+  const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  const n = Math.floor(Number(req.body && req.body.amount));
+  const mode = req.body && req.body.mode === 'set' ? 'set' : 'add';
+  if (!Number.isFinite(n) || n < (mode === 'set' ? 0 : 1) || n > 999999) {
+    return res.status(400).json({ error: 'Jumlah tidak valid.' });
+  }
+  const before = a.stats.coins;
+  a.stats.coins = mode === 'set' ? n : before + n;
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  saveSoon();
+  res.json({ before, after: a.stats.coins, account: ownerAccount(a) });
 });
 
 // ------------------------- statik: file game -------------------------

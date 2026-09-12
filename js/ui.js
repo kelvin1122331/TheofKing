@@ -1,10 +1,10 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=15';
-import { rankForStars, rankProgress } from './ranks.js?v=15';
-import { sfx } from './sound.js?v=15';
-import { flagFor } from './countries.js?v=15';
+import { avatarGradientFor, initialsFor } from './store.js?v=16';
+import { rankForStars, rankProgress } from './ranks.js?v=16';
+import { sfx } from './sound.js?v=16';
+import { flagFor } from './countries.js?v=16';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -113,6 +113,8 @@ export function avatarHTML(profileOrSeed, size = 40) {
   } else if (av && av.type === 'preset' && av.data) {
     inner = esc(av.data);
     style = `background:${avatarGradientFor(p.username)};`;
+  } else if (av && av.type === 'premium' && av.data) {
+    inner = `<img src="assets/avatars/${esc(av.data)}.png" alt="avatar" />`;
   } else if (p.emoji) {
     inner = esc(p.emoji);
     style = `background:${avatarGradientFor(p.username)};`;
@@ -120,7 +122,8 @@ export function avatarHTML(profileOrSeed, size = 40) {
     inner = esc(initialsFor(p.name || p.username));
     style = `background:${avatarGradientFor(p.username)};`;
   }
-  return `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.44)}px;${style}">${inner}</span>`;
+  const bid = p.avatarBorder && p.avatarBorder !== 'none' ? ` ava-border-${esc(p.avatarBorder)}` : '';
+  return `<span class="avatar-wrap${bid}"><span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.44)}px;${style}">${inner}</span></span>`;
 }
 
 export function rankBadgeHTML(stars, showName = true) {

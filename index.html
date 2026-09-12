@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=15" />
+  <link rel="stylesheet" href="css/style.css?v=16" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -331,15 +331,33 @@
       <button class="modal-x" data-close="modal-shop">✕</button>
       <h2>🛍️ Shop</h2>
       <div class="shop-balance" id="shop-balance"></div>
-      <h3 class="shop-title">🛡️ Star Protection</h3>
-      <p class="muted small">Otomatis dipakai saat kalah agar <b>⭐ tidak turun</b> (streak tetap reset). 1 proteksi untuk 1 kekalahan.</p>
-      <div class="prot-card">
-        <div class="prot-icon">🛡️</div>
-        <div class="prot-info"><b>Star Protection</b><span id="prot-owned"></span></div>
-        <button class="btn btn-gold btn-sm" id="btn-buy-prot"></button>
+      <div class="tabs shop-tabs" id="shop-tabs">
+        <button type="button" class="tab active" data-shop-tab="prot">🛡️ Proteksi</button>
+        <button type="button" class="tab" data-shop-tab="skins">🎨 Skin</button>
+        <button type="button" class="tab" data-shop-tab="borders">🖼️ Bingkai</button>
+        <button type="button" class="tab" data-shop-tab="avatars">😎 Avatar</button>
       </div>
-      <h3 class="shop-title">🎨 Skin Catur <span class="muted small">— terlihat oleh lawan online!</span></h3>
-      <div class="skins-grid" id="skins-grid"></div>
+      <div id="shop-pane-prot">
+        <h3 class="shop-title">🛡️ Star Protection</h3>
+        <p class="muted small">Otomatis dipakai saat kalah agar <b>⭐ tidak turun</b> (streak tetap reset). 1 proteksi untuk 1 kekalahan.</p>
+        <div class="prot-card">
+          <div class="prot-icon">🛡️</div>
+          <div class="prot-info"><b>Star Protection</b><span id="prot-owned"></span></div>
+          <button class="btn btn-gold btn-sm" id="btn-buy-prot"></button>
+        </div>
+      </div>
+      <div id="shop-pane-skins" hidden>
+        <h3 class="shop-title">🎨 Skin Catur <span class="muted small">— terlihat oleh lawan online!</span></h3>
+        <div class="skins-grid" id="skins-grid"></div>
+      </div>
+      <div id="shop-pane-borders" hidden>
+        <h3 class="shop-title">🖼️ Bingkai Foto <span class="muted small">— tampil di semua fotomu!</span></h3>
+        <div class="skins-grid" id="borders-grid"></div>
+      </div>
+      <div id="shop-pane-avatars" hidden>
+        <h3 class="shop-title">😎 Avatar Keren <span class="muted small">— gambar spesial!</span></h3>
+        <div class="skins-grid" id="avatars-grid"></div>
+      </div>
     </div>
   </div>
 
@@ -486,6 +504,14 @@
         <button class="btn btn-gold" id="adm-add" type="button">➕ Tambah</button>
         <button class="btn btn-outline" id="adm-set" type="button">🎯 Ubah Jadi</button>
       </div>
+      <div class="field-label">🪙 Kelola Koin</div>
+      <label class="field">Jumlah Koin
+        <input id="adm-amount-coin" type="number" min="0" max="999999" placeholder="cth: 500" />
+      </label>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add-coin" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set-coin" type="button">🎯 Ubah Jadi</button>
+      </div>
       <div class="field-label">🧾 Riwayat Sesi Ini</div>
       <div class="adm-log" id="adm-log"></div>
       <button class="btn btn-danger-ghost btn-block" id="adm-logout" type="button">🔒 Keluar Admin</button>
@@ -585,7 +611,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=15"></script>
-  <script type="module" src="js/app.js?v=15"></script>
+  <script src="js/vendor/peerjs.min.js?v=16"></script>
+  <script type="module" src="js/app.js?v=16"></script>
 </body>
 </html>

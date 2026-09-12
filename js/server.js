@@ -80,6 +80,8 @@ export const Server = {
   adminFind: (token, q) => api('/api/admin/find?q=' + encodeURIComponent(q), { token }),
   adminStars: (token, target, mode, amount) =>
     api('/api/admin/stars', { method: 'POST', token, body: { target, mode, amount } }),
+  adminCoins: (token, target, mode, amount) =>
+    api('/api/admin/coins', { method: 'POST', token, body: { target, mode, amount } }),
 };
 
 export function openMatchSocket() {
