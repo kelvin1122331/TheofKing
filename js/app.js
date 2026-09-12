@@ -2,14 +2,14 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo } from './ui.js';
-import { Net, peerErrorMessage } from './net.js';
-import { Game } from './game.js';
-import { preloadPieces } from './pieces.js';
-import { AI_LEVELS } from './ai.js';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=4';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=4';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=4';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo } from './ui.js?v=4';
+import { Net, peerErrorMessage } from './net.js?v=4';
+import { Game } from './game.js?v=4';
+import { preloadPieces } from './pieces.js?v=4';
+import { AI_LEVELS } from './ai.js?v=4';
 
 // ------------------------- state -------------------------
 let screen = 'home';
@@ -730,6 +730,18 @@ function cycleTheme() {
 
 // ------------------------- init -------------------------
 function init() {
+  // Laporkan error tak terduga ke layar (jangan pernah gagal diam-diam)
+  window.addEventListener('error', (e) => {
+    if (e && e.message && !String(e.message).includes('Script error')) {
+      console.error(e.error || e.message);
+      toast('Ups, ada kendala: ' + String(e.message).slice(0, 120), 'error');
+    }
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'unknown';
+    console.error(msg);
+    if (!String(msg).includes('TIMEOUT')) toast('Ups, ada kendala: ' + String(msg).slice(0, 120), 'error');
+  });
   preloadPieces();
   renderMiniBoard();
   initConfirm();

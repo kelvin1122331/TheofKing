@@ -1,7 +1,7 @@
 // ============================================================
 // Efek suara hasil sintesis WebAudio (tanpa file audio).
 // ============================================================
-import { store } from './store.js';
+import { store } from './store.js?v=4';
 
 let ctx = null;
 let noiseBuf = null;
@@ -10,9 +10,18 @@ function ac() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
-    ctx = new AC();
+    try {
+      ctx = new AC();
+    } catch {
+      return null;
+    }
   }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  if (ctx.state === 'suspended') {
+    try {
+      const r = ctx.resume();
+      if (r && typeof r.catch === 'function') r.catch(() => {});
+    } catch { /* abaikan */ }
+  }
   return ctx;
 }
 
