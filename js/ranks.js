@@ -43,7 +43,7 @@ export function rankProgress(stars) {
  * @param {'win'|'loss'|'draw'} result
  * @returns {{ starDelta:number, rankUp:boolean, rankDown:boolean, before:object, after:object }}
  */
-export function applyResult(stats, result) {
+export function applyResult(stats, result, opts = {}) {
   const before = rankForStars(stats.stars);
   let starDelta = 0;
   stats.games = (stats.games || 0) + 1;
@@ -55,9 +55,13 @@ export function applyResult(stats, result) {
     starDelta = 1;
   } else if (result === 'loss') {
     stats.losses = (stats.losses || 0) + 1;
-    stats.stars = Math.max(0, (stats.stars || 0) - 1);
+    if (opts.protect) {
+      starDelta = 0; // dilindungi Star Protection: bintang aman
+    } else {
+      stats.stars = Math.max(0, (stats.stars || 0) - 1);
+      starDelta = -1;
+    }
     stats.streak = 0;
-    starDelta = -1;
   } else {
     stats.draws = (stats.draws || 0) + 1;
     starDelta = 0; // seri: bintang & streak aman

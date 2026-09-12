@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=8';
+import { rankForStars } from './ranks.js?v=9';
 
 const PREFIX = 'tok.v1.';
 
@@ -36,12 +36,14 @@ export const store = {
   set profile(v) { write('profile', v); },
 
   get stats() {
-    return read('stats', { stars: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, draws: 0, games: 0 });
+    const d = { stars: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, draws: 0, games: 0, coins: 0, protections: 0 };
+    return { ...d, ...read('stats', {}) };
   },
   set stats(v) { write('stats', v); },
 
   get settings() {
-    return read('settings', { sound: true, theme: 'wood' });
+    const d = { sound: true, theme: 'wood', skin: 'wood', skins: ['wood', 'midnight', 'emerald'] };
+    return { ...d, ...read('settings', {}) };
   },
   set settings(v) { write('settings', v); },
 

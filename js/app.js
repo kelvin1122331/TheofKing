@@ -2,15 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=8';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=8';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=8';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=8';
-import { Net, peerErrorMessage } from './net.js?v=8';
-import { Game } from './game.js?v=8';
-import { preloadPieces } from './pieces.js?v=8';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=8';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=8';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=9';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=9';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=9';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=9';
+import { Net, peerErrorMessage } from './net.js?v=9';
+import { Game } from './game.js?v=9';
+import { preloadPieces } from './pieces.js?v=9';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=9';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=9';
+import { SKINS, skinById, applySkin } from './skins.js?v=9';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -36,8 +37,6 @@ const cfgState = {
   online: { tab: 'create', color: 'random', time: 'b5', code: '' },
 };
 
-const THEMES = ['wood', 'midnight', 'emerald'];
-const THEME_NAMES = { wood: 'Kayu Klasik 🪵', midnight: 'Midnight 🌙', emerald: 'Emerald 💚' };
 
 function timeById(id) {
   return TIME_OPTIONS.find((t) => t.id === id) || TIME_OPTIONS[0];
@@ -86,6 +85,8 @@ function renderChip() {
   chip.innerHTML = `${avatarHTML(p, 32)}
     <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${esc(p.name)}</span>
     <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span></span>`;
+  const cb = document.getElementById('coin-balance');
+  if (cb) cb.textContent = store.stats.coins || 0;
 }
 
 function refreshStats() {
@@ -106,6 +107,8 @@ function refreshStats() {
   $('#stat-games').textContent = st.games || 0;
   const g = myGlobalRank('stars');
   $('#stat-global').textContent = g ? '#' + g : '#–';
+  $('#stat-coins').textContent = st.coins || 0;
+  $('#stat-prot').textContent = st.protections || 0;
   $('#hero-stars').textContent = st.stars || 0;
   $('#hero-streak').textContent = st.streak || 0;
   // ladder
@@ -598,7 +601,7 @@ async function joinRoom() {
 
 function snapshotStats() {
   const st = store.stats;
-  return { stars: st.stars || 0, streak: st.streak || 0, wins: st.wins || 0 };
+  return { stars: st.stars || 0, streak: st.streak || 0, wins: st.wins || 0, skin: store.settings.skin || 'wood' };
 }
 
 function enterLobby() {
@@ -735,7 +738,7 @@ async function startOnlineGame() {
     isHost: lobby.isHost,
   };
   // sematkan bintang lawan untuk tampilan
-  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0 };
+  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0, skin: oppEntry.stats?.skin || 'wood' };
   net.onData = (msg) => (game ? game.onNetMessage(msg) : onLobbyNetData(msg));
   net.onClose = () => {
     if (!game) {
@@ -754,11 +757,13 @@ async function startOnlineGame() {
     const me = currentProfile();
     const r = rankForStars(store.stats.stars || 0);
     const or = rankForStars(cfg.opp.stars || 0);
+    const oppSkinObj = skinById(cfg.opp.skin);
+    const oppSkinLabel = oppSkinObj && cfg.opp.skin !== 'wood' ? ` • 🎨 ${oppSkinObj.name}` : '';
     await showVsSplash({
       me,
       opp: cfg.opp,
       meSub: `${r.icon} ${r.name} • ⭐ ${store.stats.stars || 0}`,
-      oppSub: `${or.icon} ${or.name} • ⭐ ${cfg.opp.stars || 0}`,
+      oppSub: `${or.icon} ${or.name} • ⭐ ${cfg.opp.stars || 0}${oppSkinLabel}`,
       modeLabel: '🌐 ONLINE 1 VS 1',
       sub: `⏱️ ${lobby.config.timeLabel} • Kamu: ${myColor === 'w' ? '⬜ Putih' : '⬛ Hitam'}`,
       meStreak: store.stats.streak || 0,
@@ -820,22 +825,101 @@ function initLobby() {
   });
 }
 
-// ------------------------- tema & suara -------------------------
-function applyTheme() {
-  const theme = store.settings.theme || 'wood';
-  const b = $('#board');
-  b.classList.remove('theme-wood', 'theme-midnight', 'theme-emerald');
-  b.classList.add('theme-' + theme);
+// ------------------------- skin & shop -------------------------
+function applyEquippedSkin() {
+  applySkin(document.getElementById('board'), store.settings.skin || 'wood');
 }
 
-function cycleTheme() {
-  const s = store.settings;
-  const i = (THEMES.indexOf(s.theme) + 1) % THEMES.length;
-  s.theme = THEMES[i];
-  store.settings = s;
-  applyTheme();
+function ownedSkins() {
+  const s = store.settings.skins;
+  const base = ['wood', 'midnight', 'emerald'];
+  if (!Array.isArray(s) || !s.length) return [...base];
+  const known = new Set(SKINS.map((x) => x.id));
+  return [...new Set([...base, ...s.filter((id) => known.has(id))])];
+}
+
+function openShop() {
+  renderShop();
+  openModal('modal-shop');
+}
+
+function renderShop() {
+  const st = store.stats;
+  const equipped = store.settings.skin || 'wood';
+  const owned = ownedSkins();
+  document.getElementById('shop-balance').innerHTML =
+    `🪙 <b>${st.coins || 0}</b> &nbsp;•&nbsp; 🛡️ Proteksi: <b>${st.protections || 0}</b>`;
+  document.getElementById('prot-owned').textContent =
+    `Punya ${st.protections || 0} • otomatis dipakai saat kalah`;
+  const pb = document.getElementById('btn-buy-prot');
+  pb.textContent = 'Beli — 10 🪙';
+  pb.disabled = (st.coins || 0) < 10;
+  pb.onclick = () => {
+    const cur = store.stats;
+    if ((cur.coins || 0) < 10) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
+    cur.coins -= 10;
+    cur.protections = (cur.protections || 0) + 1;
+    saveStats(cur);
+    sfx.buy();
+    toast('🛡️ +1 Star Protection!', 'success');
+    document.dispatchEvent(new CustomEvent('tok:stats'));
+    renderShop();
+  };
+  const grid = document.getElementById('skins-grid');
+  grid.innerHTML = SKINS.map((sk) => {
+    const has = owned.includes(sk.id);
+    const isEq = equipped === sk.id;
+    const btn = isEq
+      ? `<button class="btn btn-gold btn-sm" disabled>✓ Dipakai</button>`
+      : has
+        ? `<button class="btn btn-outline btn-sm" data-equip="${sk.id}">Pakai</button>`
+        : `<button class="btn btn-gold btn-sm" data-buy="${sk.id}" ${(st.coins || 0) < sk.price ? 'disabled' : ''}>Beli — ${sk.price} 🪙</button>`;
+    return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
+      <div class="skin-prev skin-${sk.id}"></div>
+      <div class="skin-name">${esc(sk.name)}</div>
+      <div class="skin-desc">${esc(sk.desc)}</div>
+      ${btn}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-buy]').forEach((x) => { x.onclick = () => buySkin(x.dataset.buy); });
+  grid.querySelectorAll('[data-equip]').forEach((x) => { x.onclick = () => equipSkin(x.dataset.equip); });
+}
+
+function buySkin(id) {
+  const sk = skinById(id);
+  if (!sk) return;
+  const cur = store.stats;
+  if ((cur.coins || 0) < sk.price) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
+  cur.coins -= sk.price;
+  saveStats(cur);
+  const settings = store.settings;
+  settings.skins = [...new Set([...ownedSkins(), id])];
+  settings.skin = id;
+  store.settings = settings;
+  if (game && game.cfg.mode === 'online') {
+    toast(`🎨 Skin ${sk.name} dibeli! Dipakai mulai game online berikutnya.`, 'success');
+  } else {
+    applyEquippedSkin();
+    toast(`🎨 Skin ${sk.name} dibeli & dipakai!`, 'success');
+  }
+  sfx.buy();
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  renderShop();
+}
+
+function equipSkin(id) {
+  if (!skinById(id) || !ownedSkins().includes(id)) return;
+  const settings = store.settings;
+  settings.skin = id;
+  store.settings = settings;
+  if (game && game.cfg.mode === 'online') {
+    toast('🎨 Skin tersimpan — dipakai mulai game online berikutnya.', 'gold');
+  } else {
+    applyEquippedSkin();
+    toast(`🎨 Skin ${skinById(id).name} dipakai!`, 'success');
+  }
   sfx.click();
-  toast(`Tema papan: ${THEME_NAMES[s.theme]} 🎨`, 'gold');
+  renderShop();
 }
 
 // ------------------------- init -------------------------
@@ -859,7 +943,7 @@ function init() {
   initOnboarding();
   initProfileModal();
   initLobby();
-  applyTheme();
+  applyEquippedSkin();
 
   // unlock audio di interaksi pertama
   const unlock = () => unlockAudio();
@@ -879,7 +963,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
@@ -889,7 +973,9 @@ function init() {
   $('#profile-chip').addEventListener('click', () => { sfx.click(); openProfileModal(); });
   $('#btn-leaderboard').addEventListener('click', openLeaderboard);
   $('#btn-help').addEventListener('click', () => { sfx.click(); openModal('modal-help'); });
-  $('#btn-theme').addEventListener('click', cycleTheme);
+  $('#btn-theme').addEventListener('click', () => { sfx.click(); openShop(); });
+  $('#btn-shop').addEventListener('click', () => { sfx.click(); openShop(); });
+  $('#stat-coins-card').addEventListener('click', () => { sfx.click(); openShop(); });
   const sndBtn = $('#btn-sound');
   const paintSnd = () => { sndBtn.textContent = soundEnabled() ? '🔊' : '🔇'; };
   paintSnd();

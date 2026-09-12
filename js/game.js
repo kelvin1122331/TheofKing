@@ -2,18 +2,19 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=8';
-import { Board } from './board.js?v=8';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=8';
-import { sfx } from './sound.js?v=8';
-import { store, saveStats, pushRecent } from './store.js?v=8';
-import { applyResult, rankForStars } from './ranks.js?v=8';
+import { Chess } from './vendor/chess.js?v=9';
+import { Board } from './board.js?v=9';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=9';
+import { sfx } from './sound.js?v=9';
+import { store, saveStats, pushRecent } from './store.js?v=9';
+import { applyResult, rankForStars } from './ranks.js?v=9';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog,
-} from './ui.js?v=8';
-import { pieceSrc } from './pieces.js?v=8';
-import { flagFor } from './countries.js?v=8';
+} from './ui.js?v=9';
+import { pieceSrc } from './pieces.js?v=9';
+import { flagFor } from './countries.js?v=9';
+import { applySkin, skinById } from './skins.js?v=9';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -116,6 +117,16 @@ export class Game {
     this.board.setPieces(this.piecesMap());
     this.board.setLastMove(null);
     this.board.setCheck(null);
+    {
+      // online: papan memakai skin LAWAN agar bisa dilihat; offline: skin sendiri
+      const mySkin = store.settings.skin || 'wood';
+      const useSkin = this.cfg.mode === 'online' ? (this.cfg.opp?.skin || 'wood') : mySkin;
+      applySkin(document.getElementById('board'), useSkin);
+      if (this.cfg.mode === 'online' && useSkin !== 'wood') {
+        const sk = skinById(useSkin);
+        if (sk) setTimeout(() => toast(`🎨 Lawan memakai skin ${sk.name}!`, 'gold'), 400);
+      }
+    }
     this.clocks = { w: this.cfg.timeMs, b: this.cfg.timeMs };
     this.running = true;
     this.finished = false;
@@ -366,9 +377,20 @@ export class Game {
     else if (outcome === 'loss') sfx.lose();
     else sfx.draw();
 
-    // rating
+    // proteksi bintang + rating + koin
     const stats = store.stats;
-    const delta = applyResult(stats, outcome);
+    let isProtected = false;
+    if (outcome === 'loss' && (stats.protections || 0) > 0) {
+      stats.protections -= 1;
+      isProtected = true;
+    }
+    const delta = applyResult(stats, outcome, { protect: isProtected });
+    delta.protected = isProtected;
+    let coinsEarned = 0;
+    if (outcome === 'win') {
+      coinsEarned = Math.min(25, 5 + Math.max(0, (stats.streak || 0) - 1) * 2);
+      stats.coins = (stats.coins || 0) + coinsEarned;
+    }
     saveStats(stats);
     pushRecent({
       result: outcome, reason,
@@ -378,7 +400,7 @@ export class Game {
     });
     document.dispatchEvent(new CustomEvent('tok:stats'));
 
-    this.result = { outcome, reason, delta };
+    this.result = { outcome, reason, delta, coinsEarned };
     this.updateStatus();
     setTimeout(() => this.showResult(), 650);
   }
@@ -630,7 +652,7 @@ export class Game {
 
   // ============================ hasil ============================
   showResult() {
-    const { outcome, reason, delta } = this.result;
+    const { outcome, reason, delta, coinsEarned } = this.result;
     const trophy = $('#result-trophy');
     const title = $('#result-title');
     if (outcome === 'win') { trophy.textContent = '🏆'; title.innerHTML = 'Kamu <span class="gold-text">Menang!</span>'; }
@@ -644,17 +666,20 @@ export class Game {
     else if (delta.starDelta < 0) sr.innerHTML = `<span class="pop">💫</span><span style="font-size:1.1rem;font-weight:800;color:var(--red)">−1 bintang</span>`;
     else sr.innerHTML = `<span style="font-size:1rem;color:var(--muted)">Bintang tetap ⭐ ${store.stats.stars}</span>`;
 
+    if (coinsEarned > 0) sr.innerHTML += `<div class="result-coins">🪙 +${coinsEarned} koin!</div>`;
+    if (delta.protected) sfx.notify();
     // rank
     const rk = $('#result-rank');
+    const protMsg = delta.protected ? `<div class="prot-note">🛡️ Star Protection dipakai — bintang aman!</div>` : '';
     if (delta.rankUp) {
       sfx.rankup();
       confettiBurst(260);
-      rk.innerHTML = `<span class="rankup">🎉 NAIK RANK: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}!</span>`;
+      rk.innerHTML = protMsg + `<span class="rankup">🎉 NAIK RANK: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}!</span>`;
     } else if (delta.rankDown) {
-      rk.innerHTML = `<span class="muted">Rank turun: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}. Semangat, balas dendam! 💪</span>`;
+      rk.innerHTML = protMsg + `<span class="muted">Rank turun: ${delta.before.icon} ${delta.before.name} → ${delta.after.icon} ${delta.after.name}. Semangat, balas dendam! 💪</span>`;
     } else {
       const r = delta.after;
-      rk.innerHTML = `<span class="muted">Rank: ${r.icon} <b style="color:var(--text)">${r.name}</b> • ⭐ ${store.stats.stars}</span>`;
+      rk.innerHTML = protMsg + `<span class="muted">Rank: ${r.icon} <b style="color:var(--text)">${r.name}</b> • ⭐ ${store.stats.stars}</span>`;
     }
 
     // streak
