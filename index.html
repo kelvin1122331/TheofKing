@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>TheofKing — Main Catur Online &amp; Offline</title>
+  <meta name="description" content="TheofKing: game catur online & offline dengan sistem rank Bronze → Master, bintang, streak kemenangan, dan global leaderboard." />
+  <meta name="theme-color" content="#0b0e17" />
+  <!-- Jangan cache HTML ini; kalau ubah css/js, naikkan ?v= di bawah & di import antar-modul -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <script>
+  /* Diagnostik boot TheofKing (skrip klasik: tetap jalan walau modul aplikasi gagal).
+     Ditulis gaya ES5 agar jalan juga di browser lama. */
+  window.__TOK_BOOT_ERRORS = [];
+  window.__TOK_STORAGE_OK = true;
+  try {
+    localStorage.setItem('__tok_probe', '1');
+    localStorage.removeItem('__tok_probe');
+  } catch (err) { window.__TOK_STORAGE_OK = false; }
+  window.addEventListener('error', function (e) {
+    if (!e) return;
+    var msg = '';
+    if (e.message && String(e.message).indexOf('Script error') === -1) msg = String(e.message);
+    else if (e.target && (e.target.src || e.target.href)) msg = 'Gagal memuat file: ' + (e.target.src || e.target.href);
+    if (msg && window.__TOK_BOOT_ERRORS.length < 5) window.__TOK_BOOT_ERRORS.push(msg.slice(0, 220));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    var m = e && e.reason ? (e.reason.message || String(e.reason)) : 'kesalahan tak dikenal';
+    if (window.__TOK_BOOT_ERRORS.length < 5) window.__TOK_BOOT_ERRORS.push(String(m).slice(0, 220));
+  });
+  window.__TOK_SHOW_BANNER = function (kind) {
+    if (!document.body || document.getElementById('tok-boot-banner')) return;
+    var title = 'Mohon tunggu...';
+    var desc = '';
+    if (kind === 'nomodule') {
+      title = 'Browser Terlalu Lama';
+      desc = 'Browser ini tidak mendukung teknologi aplikasi (JavaScript module). Solusi: gunakan Chrome / Edge / Firefox terbaru, atau update browser kamu.';
+    } else if (!window.__TOK_MODULE_OK) {
+      title = 'Gagal Memuat Aplikasi';
+      desc = 'File aplikasi gagal dimuat. Penyebab umum: koneksi terputus sesaat, cache browser korup, atau jaringan memblokir unduhan file.';
+    } else if (!window.__TOK_INIT_STARTED) {
+      title = 'Aplikasi Gagal Mulai';
+      desc = 'Aplikasi gagal mulai. Coba muat ulang halaman.';
+    } else {
+      title = 'Aplikasi Gagal Selesai Dimuat';
+      desc = 'Terjadi kendala saat menyiapkan aplikasi. Coba muat ulang halaman.';
+    }
+    if (!window.__TOK_STORAGE_OK) {
+      desc += ' Catatan: penyimpanan browser diblokir (mode privat/ketat), sehingga nama & rank hanya tersimpan sementara.';
+    }
+    var esc = function (x) {
+      return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+    var errs = window.__TOK_BOOT_ERRORS.slice(0, 3);
+    var errHtml = '';
+    if (errs.length) {
+      errHtml = '<div style="text-align:left;background:rgba(255,93,108,.12);border:1px solid rgba(255,93,108,.5);border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:12px;color:#ffb3ba">'
+        + '<b>Detail teknis (untuk laporan):</b><br>' + errs.map(esc).join('<br>') + '</div>';
+    }
+    var ov = document.createElement('div');
+    ov.id = 'tok-boot-banner';
+    ov.setAttribute('style', 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(4,6,12,.94);padding:16px;font-family:-apple-system,Segoe UI,Roboto,sans-serif');
+    ov.innerHTML = '<div style="width:100%;max-width:470px;background:#171d33;border:2px solid #f5c044;border-radius:16px;padding:26px 24px;color:#f2f4fa;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.5)">'
+      + '<div style="font-size:1.15rem;font-weight:800;margin-bottom:10px">' + esc(title) + '</div>'
+      + '<div style="font-size:.88rem;color:#c6cddd;line-height:1.55;margin-bottom:14px">' + esc(desc) + '</div>'
+      + errHtml
+      + '<button id="tok-boot-reload" style="width:100%;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:1rem;color:#241700;background:linear-gradient(135deg,#ffdf8e,#f5c044 55%,#d99a1f);cursor:pointer">Muat Ulang Halaman</button>'
+      + '<div style="margin-top:12px;font-size:.75rem;color:#9aa3b8">Kalau tetap gagal: coba browser lain, matikan mode hemat data/VPN, atau screenshot pesan ini untuk admin.</div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('tok-boot-reload').onclick = function () { location.reload(); };
+    var iv = setInterval(function () {
+      if (window.__TOK_READY) { clearInterval(iv); var b = document.getElementById('tok-boot-banner'); if (b) b.remove(); }
+    }, 1000);
+  };
+  setTimeout(function () {
+    if (window.__TOK_READY) return;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { window.__TOK_SHOW_BANNER('timeout'); });
+    } else {
+      window.__TOK_SHOW_BANNER('timeout');
+    }
+  }, 8000);
+  </script>
+  <script nomodule>window.__TOK_SHOW_BANNER && window.__TOK_SHOW_BANNER('nomodule');</script>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=34" />
+</head>
+<body>
+  <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
+  <div class="bg-decor" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <span class="float-piece" style="--x:6vw;  --d:0s;  --s:44px;">♞</span>
+    <span class="float-piece" style="--x:88vw; --d:2s;  --s:60px;">♜</span>
+    <span class="float-piece" style="--x:14vw; --d:5s;  --s:34px;">♝</span>
+    <span class="float-piece" style="--x:78vw; --d:7s;  --s:40px;">♛</span>
+    <span class="float-piece" style="--x:30vw; --d:3s;  --s:30px;">♟</span>
+    <span class="float-piece" style="--x:65vw; --d:9s;  --s:36px;">♚</span>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#" id="brand-home" title="TheofKing">
+        <span class="brand-knight">♞</span>
+        <span class="brand-text">Theof<b>King</b></span>
+      </a>
+      <div class="topbar-actions">
+        <button id="btn-sound" class="icon-btn" title="Suara on/off">🔊</button>
+        <button id="btn-friends" class="icon-btn" title="Teman">👥<span class="count-badge" id="friends-count" hidden>0</span></button>
+        <button id="btn-shop" class="icon-btn" title="Shop (koin & skin)">🛍️</button>
+        <button id="btn-leaderboard" class="btn btn-ghost hide-sm">🏆 Rank Global</button>
+        <button id="btn-help" class="icon-btn" title="Cara bermain">❓</button>
+        <button id="profile-chip" class="profile-chip" title="Profil saya"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ============ HOME ============ -->
+    <section id="screen-home">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-badge">♞ GAME CATUR INDONESIA ♞</div>
+          <h1>Jadilah <span class="gold-text">Raja</span> di Atas Papan!</h1>
+          <p class="hero-sub">Main catur <b>offline vs komputer</b>, <b>vs teman satu HP</b>, atau <b>online lawan pemain lain</b>. Kumpulkan ⭐, jaga 🔥 streak, dan panjat rank dari <b>Bronze</b> sampai <b>Master</b>!</p>
+          <div class="hero-cta">
+            <button class="btn btn-gold btn-lg" id="btn-quick-ai">⚡ Main Cepat vs Komputer</button>
+            <button class="btn btn-outline btn-lg" id="btn-quick-online">🌐 Main Online</button>
+          </div>
+          <div class="rank-ladder" id="rank-ladder"></div>
+        </div>
+        <div class="hero-board">
+          <div class="mini-board" id="mini-board" aria-hidden="true"></div>
+          <div class="hero-card-float f1">🔥 Streak <b id="hero-streak">0</b></div>
+          <div class="hero-card-float f2">⭐ <b id="hero-stars">0</b> Bintang</div>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card rank-card">
+          <div class="stat-label">Rank Saya</div>
+          <div class="stat-rank" id="stat-rank"></div>
+          <div class="star-progress" id="star-progress"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🔥 Streak Menang</div>
+          <div class="stat-value" id="stat-streak">0</div>
+          <div class="stat-foot">Terbaik: <b id="stat-best-streak">0</b></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⚔️ Rekor (M / S / K)</div>
+          <div class="stat-value wdl"><span class="w" id="stat-wins">0</span> / <span class="d" id="stat-draws">0</span> / <span class="l" id="stat-losses">0</span></div>
+          <div class="stat-foot"><span id="stat-games">0</span> permainan</div>
+        </div>
+        <div class="stat-card clickable" id="stat-global-card" title="Lihat rank global">
+          <div class="stat-label">🌍 Peringkat Global</div>
+          <div class="stat-value gold-text" id="stat-global">#–</div>
+          <div class="stat-foot">Ketuk untuk leaderboard →</div>
+        </div>
+        <div class="stat-card clickable" id="stat-coins-card" title="Buka shop">
+          <div class="stat-label">🪙 Koin</div>
+          <div class="stat-value gold-text" id="stat-coins">0</div>
+          <div class="stat-foot">🛡️ Proteksi: <b id="stat-prot">0</b> • Ketuk u/ Shop →</div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Pilih Mode Permainan</h2>
+      <div class="modes-grid">
+        <article class="mode-card" data-mode="ai" tabindex="0">
+          <div class="mode-icon">🤖</div>
+          <h3>Vs Komputer</h3>
+          <p>Offline. Lawan AI 3 level: Mudah, Sedang, Sulit.</p>
+          <span class="mode-tag off">📴 OFFLINE</span>
+        </article>
+        <article class="mode-card" data-mode="local" tabindex="0">
+          <div class="mode-icon">👥</div>
+          <h3>Vs Teman</h3>
+          <p>Offline. Main berdua di satu HP / layar.</p>
+          <span class="mode-tag off">📴 OFFLINE</span>
+        </article>
+        <article class="mode-card" data-mode="online" tabindex="0">
+          <div class="mode-icon">🌐</div>
+          <h3>Online</h3>
+          <p>Buat room &amp; bagikan kode, atau gabung room teman.</p>
+          <span class="mode-tag on">📶 ONLINE</span>
+        </article>
+        <article class="mode-card" data-mode="arena" tabindex="0">
+          <div class="mode-icon">⚔️</div>
+          <h3>Ranked</h3>
+          <p>Lawan acak se-rank. Menang +1 ⭐, kalah −1 ⭐.</p>
+          <span class="mode-tag on">📶 ONLINE</span>
+        </article>
+      </div>
+
+      <div id="mode-config" class="config-panel" hidden></div>
+
+      <div class="panel recent-panel" id="recent-panel" hidden>
+        <h3>🕘 Permainan Terakhir</h3>
+        <div id="recent-list" class="recent-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ LOBBY ONLINE ============ -->
+    <section id="screen-lobby" hidden>
+      <div class="lobby-grid">
+        <div class="panel lobby-main">
+          <h2>🌐 Lobby Online</h2>
+          <div class="room-code-box">
+            <div class="room-code-label">KODE ROOM</div>
+            <div class="room-code" id="lobby-code">------</div>
+            <div class="room-code-actions">
+              <button class="btn btn-outline btn-sm" id="btn-copy-code">📋 Salin</button>
+              <button class="btn btn-outline btn-sm" id="btn-share-code">💬 Bagikan</button>
+            </div>
+          </div>
+          <div class="lobby-players">
+            <div class="lobby-player" id="lobby-host"></div>
+            <div class="lobby-vs">VS</div>
+            <div class="lobby-player" id="lobby-guest"></div>
+          </div>
+          <div class="lobby-config" id="lobby-config"></div>
+          <div class="lobby-status" id="lobby-status">Menunggu lawan bergabung…</div>
+          <div class="lobby-actions">
+            <button class="btn btn-gold btn-lg" id="btn-lobby-start" disabled>▶ Mulai Pertandingan</button>
+            <button class="btn btn-danger-ghost" id="btn-lobby-leave">✕ Keluar Room</button>
+          </div>
+        </div>
+        <div class="panel lobby-chat">
+          <h3>💬 Chat Lobby</h3>
+          <div class="chat-messages" id="lobby-chat-messages"></div>
+          <form class="chat-form" id="lobby-chat-form">
+            <button type="button" class="btn btn-outline btn-sm btn-emote" id="lobby-emote-btn" title="Kirim emote">😀</button>
+            <input id="lobby-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
+            <button type="submit" class="btn btn-gold btn-sm">➤</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" hidden>
+      <div id="emote-float" aria-hidden="true"></div>
+      <div class="game-layout">
+        <div class="board-col">
+          <div class="player-bar" id="player-top"></div>
+          <div class="board-frame">
+            <div id="board" class="board skin-wood"></div>
+            <div class="board-fx" id="board-fx" aria-hidden="true">
+              <div class="dragon-fly"><div class="dragon-inner">
+                <img class="dragon-img" src="assets/fx/dragon.png?v=34" alt="" draggable="false" />
+                <img class="dragon-fire" src="assets/fx/fire.png?v=34" alt="" draggable="false" />
+              </div></div>
+              <span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span><span class="ember e4"></span>
+            </div>
+          </div>
+          <div class="player-bar" id="player-bottom"></div>
+          <div class="game-status" id="game-status">Memuat…</div>
+        </div>
+        <aside class="side-col">
+          <div class="panel moves-panel">
+            <div class="moves-head">
+              <h3>📝 Notasi Langkah</h3>
+              <span class="material-chip" id="material-chip" hidden></span>
+            </div>
+            <ol id="moves-list" class="moves-list"><li class="moves-empty">Belum ada langkah.</li></ol>
+          </div>
+          <div class="panel controls-panel">
+            <h3>🎮 Kontrol</h3>
+            <div class="controls-grid">
+              <button class="btn btn-outline btn-sm" id="btn-flip">🔄 Balik Papan</button>
+              <button class="btn btn-outline btn-sm" id="btn-draw">🤝 Remis <span id="draw-badge" class="badge" hidden>1</span></button>
+              <button class="btn btn-danger btn-sm" id="btn-resign">🏳️ Menyerah</button>
+              <button class="btn btn-outline btn-sm" id="btn-newgame">➕ Game Baru</button>
+              <button class="btn btn-ghost btn-sm" id="btn-tomenu">🏠 Menu Utama</button>
+            </div>
+          </div>
+          <div class="panel chat-panel" id="panel-chat" hidden>
+            <h3>💬 Chat Lawan <span id="chat-badge" class="badge" hidden>0</span></h3>
+            <div class="chat-messages" id="game-chat-messages"></div>
+            <form class="chat-form" id="game-chat-form">
+              <button type="button" class="btn btn-outline btn-sm btn-emote" id="btn-emote" title="Kirim emote">😀</button>
+              <input id="game-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
+              <button type="submit" class="btn btn-gold btn-sm">➤</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <button id="btn-inbox" class="inbox-fab" title="Pesan">💌<span class="count-badge" id="inbox-count" hidden>0</span></button>
+  <button id="cheat-fab" class="cheat-fab" title="Menu Cheat (Admin)" hidden>🤖</button>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span>© 2026 <b>TheofKing</b> 👑 — Mainkan dengan sportivitas!</span>
+      <span class="footer-credits">👑 Owner: <b>mahendra</b> &nbsp;•&nbsp; 🤝 Sponsor: <b>tokogameid</b></span>
+      <span class="server-status" id="server-status" title="Status koneksi server">⚪ Offline</span>
+    </div>
+  </footer>
+
+  <!-- ============ VS SPLASH ============ -->
+  <div id="vs-splash" class="vs-overlay" style="display:none" aria-hidden="true">
+    <div class="vs-inner">
+      <div class="vs-mode" id="vs-mode">Pertandingan</div>
+      <div class="vs-cards">
+        <div class="vs-card vs-me">
+          <div class="vs-tag">KAMU</div>
+          <div class="vs-avatar-wrap">
+            <div class="vs-avatar" id="vs-me-avatar"></div>
+            <div class="vs-streak" id="vs-me-streak" hidden></div>
+          </div>
+          <div class="vs-name" id="vs-me-name"></div>
+          <div class="vs-rank" id="vs-me-rank"></div>
+        </div>
+        <div class="vs-badge"><span>VS</span></div>
+        <div class="vs-card vs-opp">
+          <div class="vs-tag">LAWAN</div>
+          <div class="vs-avatar-wrap">
+            <div class="vs-avatar" id="vs-opp-avatar"></div>
+            <div class="vs-streak" id="vs-opp-streak" hidden></div>
+          </div>
+          <div class="vs-name" id="vs-opp-name"></div>
+          <div class="vs-rank" id="vs-opp-rank"></div>
+        </div>
+      </div>
+      <div class="vs-sub" id="vs-sub"></div>
+      <div class="vs-bar"><i></i></div>
+      <div class="vs-skip">ketuk untuk lewati</div>
+    </div>
+  </div>
+
+  <!-- ============ SHOP ============ -->
+  <div class="modal-backdrop" id="modal-shop" hidden style="display:none">
+    <div class="modal modal-wide modal-scroll">
+      <button class="modal-x" data-close="modal-shop">✕</button>
+      <h2>🛍️ Shop</h2>
+      <div class="shop-balance" id="shop-balance"></div>
+      <div class="tabs shop-tabs" id="shop-tabs">
+        <button type="button" class="tab active" data-shop-tab="prot">🛡️ Proteksi</button>
+        <button type="button" class="tab" data-shop-tab="skins">🎨 Skin</button>
+        <button type="button" class="tab" data-shop-tab="borders">🖼️ Bingkai</button>
+        <button type="button" class="tab" data-shop-tab="avatars">😎 Avatar</button>
+        <button type="button" class="tab" data-shop-tab="nickfx">✨ Efek</button>
+        <button type="button" class="tab" data-shop-tab="topup">🪙 Top Up</button>
+        <button type="button" class="tab" data-shop-tab="spin">🎰 Spin</button>
+      </div>
+      <div id="shop-pane-prot">
+        <h3 class="shop-title">🛡️ Star Protection</h3>
+        <p class="muted small">Otomatis dipakai saat kalah agar <b>⭐ tidak turun</b> (streak tetap reset). 1 proteksi untuk 1 kekalahan.</p>
+        <div class="prot-card">
+          <div class="prot-icon">🛡️</div>
+          <div class="prot-info"><b>Star Protection</b><span id="prot-owned"></span></div>
+          <button class="btn btn-gold btn-sm" id="btn-buy-prot"></button>
+        </div>
+        <div class="prot-card" style="margin-top:10px">
+          <div class="prot-icon">🎫</div>
+          <div class="prot-info"><b>Kartu Ganti Nama</b><span id="changename-owned"></span></div>
+          <button class="btn btn-gold btn-sm" id="btn-buy-changename"></button>
+        </div>
+      </div>
+      <div id="shop-pane-skins" hidden>
+        <h3 class="shop-title">🎨 Skin Catur <span class="muted small">— terlihat oleh lawan online!</span></h3>
+        <div class="skins-grid" id="skins-grid"></div>
+      </div>
+      <div id="shop-pane-borders" hidden>
+        <h3 class="shop-title">🖼️ Bingkai Foto <span class="muted small">— tampil di semua fotomu!</span></h3>
+        <div class="skins-grid" id="borders-grid"></div>
+      </div>
+      <div id="shop-pane-avatars" hidden>
+        <h3 class="shop-title">😎 Avatar Keren <span class="muted small">— gambar spesial!</span></h3>
+        <div class="skins-grid" id="avatars-grid"></div>
+      </div>
+      <div id="shop-pane-nickfx" hidden>
+        <h3 class="shop-title">✨ Efek Nama <span class="muted small">— terlihat semua pemain!</span></h3>
+        <div class="skins-grid" id="nickfx-grid"></div>
+      </div>
+      <div id="shop-pane-topup" hidden>
+        <h3 class="shop-title">🪙 Top Up Koin <span class="muted small">— bayar via WhatsApp, diproses admin</span></h3>
+        <div class="skins-grid" id="topup-grid"></div>
+      </div>
+      <div id="shop-pane-spin" hidden>
+        <h3 class="shop-title">🎰 Lucky Spin <span class="muted small">— menangkan hadiah eksklusif!</span></h3>
+        <div class="shop-balance" id="spin-balance"></div>
+        <div class="spin-prizes" id="spin-prizes"></div>
+        <div class="spin-window" id="spin-window">
+          <div class="spin-pointer">🔻</div>
+          <div class="spin-strip" id="spin-strip"></div>
+        </div>
+        <div class="spin-btns">
+          <button class="btn btn-gold btn-lg" id="btn-spin-1" type="button"></button>
+          <button class="btn btn-gold btn-lg" id="btn-spin-10" type="button"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ONBOARDING ============ -->
+  <div class="modal-backdrop show" id="modal-onboarding" hidden style="display:none">
+    <div class="modal modal-profile">
+      <div class="modal-crown">👑</div>
+      <h2>Selamat Datang di <span class="gold-text">TheofKing</span>!</h2>
+      <p class="muted">👋 <b>Masuk dulu yuk!</b> Isi nama, username, negara asal &amp; pilih foto profil — semuanya <b>wajib</b> ya.</p>
+      <div class="field-label">📷 Foto Profil <span class="req">*</span> <span class="muted small">(pilih emoji / upload)</span></div>
+      <div class="avatar-section">
+        <div class="avatar-preview" id="ob-avatar-preview">?</div>
+        <div class="avatar-presets" id="ob-avatar-presets"></div>
+        <div class="avatar-row">
+          <label class="btn btn-outline btn-sm file-label">📷 Upload Foto
+            <input type="file" id="ob-avatar-upload" accept="image/*" hidden />
+          </label>
+        </div>
+      </div>
+      <label class="field">Nama Lengkap <span class="req">*</span>
+        <input id="ob-name" maxlength="30" placeholder="cth: Theo Alexander" autocomplete="name" />
+      </label>
+      <label class="field">Username <span class="req">*</span>
+        <input id="ob-username" maxlength="16" placeholder="cth: theo_king (3–16 karakter)" autocomplete="username" />
+      </label>
+      <div class="field-label">🚩 Negara Asal <span class="req">*</span></div>
+      <div class="country-picker">
+        <button type="button" class="country-btn" id="ob-country-btn"></button>
+        <div class="country-drop" id="ob-country-drop" hidden>
+          <input id="ob-country-search" placeholder="🔍 Cari negara..." autocomplete="off" />
+          <div class="country-list" id="ob-country-list"></div>
+        </div>
+      </div>
+      <div class="form-error" id="ob-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🔑 Masuk & Mulai Bermain</button>
+      <button class="btn btn-ghost btn-block" id="ob-goto-login" type="button">Sudah punya akun? Masuk 🔑</button>
+    </div>
+  </div>
+
+  <!-- ============ EDIT PROFILE ============ -->
+  <div class="modal-backdrop" id="modal-profile" hidden style="display:none">
+    <div class="modal modal-profile">
+      <button class="modal-x" data-close="modal-profile">✕</button>
+      <h2>👤 Profil Saya</h2>
+      <div class="avatar-section">
+        <div class="avatar-preview" id="pf-avatar-preview">?</div>
+        <div class="avatar-presets" id="pf-avatar-presets"></div>
+        <div class="avatar-row">
+          <label class="btn btn-outline btn-sm file-label">📷 Upload Foto
+            <input type="file" id="pf-avatar-upload" accept="image/*" hidden />
+          </label>
+          <button class="btn btn-ghost btn-sm" id="pf-avatar-skip">Pakai inisial</button>
+        </div>
+      </div>
+      <label class="field">Nama Lengkap <span class="req">*</span>
+        <input id="pf-name" maxlength="30" />
+      </label>
+      <label class="field">Username <span class="req">*</span>
+        <input id="pf-username" maxlength="16" />
+      </label>
+      <div class="id-row">🆔 ID Pemain: <b id="pf-id">–</b> <button class="btn btn-outline btn-sm" id="pf-copy-id" type="button">📋 Salin</button></div>
+      <div class="id-row" id="pf-changename-info"></div>
+      <div class="field-label">🚩 Negara Asal <span class="muted small">(opsional)</span></div>
+      <div class="country-picker">
+        <button type="button" class="country-btn" id="pf-country-btn"></button>
+        <div class="country-drop" id="pf-country-drop" hidden>
+          <input id="pf-country-search" placeholder="🔍 Cari negara..." autocomplete="off" />
+          <div class="country-list" id="pf-country-list"></div>
+        </div>
+      </div>
+      <div class="form-error" id="pf-error" hidden></div>
+      <div class="profile-stats" id="profile-stats"></div>
+      <button class="btn btn-gold btn-lg btn-block" id="pf-save">💾 Simpan Profil</button>
+      <div class="field-label">🔐 Amankan Akun <span class="muted small">(main di HP lain + reset sandi)</span></div>
+      <div id="pf-secure"></div>
+      <div class="form-error" id="pf-secure-error" hidden></div>
+      <button class="btn btn-danger-ghost btn-block" id="pf-reset">🗑️ Hapus Semua Data Saya</button>
+    </div>
+  </div>
+
+  <!-- ============ TEMAN ============ -->
+  <div class="modal-backdrop" id="modal-friends" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-friends">✕</button>
+      <h2>👥 Teman</h2>
+      <p class="muted">Bagikan ID kamu ke teman, lalu saling tambahkan di sini.</p>
+      <div class="my-id-card">
+        <div>😎 <b id="fr-my-user">–</b></div>
+        <div>🆔 <b id="fr-my-id">–</b></div>
+        <div class="my-id-btns">
+          <button class="btn btn-outline btn-sm" id="fr-copy-user" type="button">📋 Username</button>
+          <button class="btn btn-outline btn-sm" id="fr-copy-id" type="button">📋 ID</button>
+        </div>
+      </div>
+      <div class="field-label">➕ Tambah Teman</div>
+      <div class="friend-add-row">
+        <input id="fr-username" maxlength="16" placeholder="Username teman" autocomplete="off" />
+        <input id="fr-id" maxlength="9" placeholder="TK-XXXXXX" autocomplete="off" />
+        <button class="btn btn-gold btn-sm" id="fr-add" type="button">➕ Tambah</button>
+      </div>
+      <div class="form-error" id="fr-error" hidden></div>
+      <div class="field-label">📋 Daftar Teman (<span id="fr-count">0</span>)</div>
+      <div class="friends-list" id="friends-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ TOP UP ============ -->
+  <div class="modal-backdrop" id="modal-topup" hidden style="display:none">
+    <div class="modal modal-scroll">
+      <button class="modal-x" data-close="modal-topup">✕</button>
+      <h2>🧾 Konfirmasi Top Up</h2>
+      <div class="topup-summary" id="topup-summary"></div>
+      <div class="topup-guide">
+        <h3>📋 Panduan Pembelian</h3>
+        <ol>
+          <li>Tekan tombol <b>WhatsApp</b> di bawah — pesan otomatis sudah terisi data kamu &amp; paket pilihan.</li>
+          <li>Kirim chat ke admin, lalu <b>transfer sesuai harga</b> paket.</li>
+          <li>Kirim <b>bukti transfer</b> (screenshot) ke admin.</li>
+          <li>Admin memproses &amp; <b>koin langsung masuk</b> ke akunmu! 🎉</li>
+        </ol>
+        <p class="muted small">⏱️ Pesanan diproses setelah pembayaran dikonfirmasi. Jangan tutup chat sebelum koin masuk ya!</p>
+      </div>
+      <a class="btn btn-wa btn-block" id="topup-wa-btn" href="#" target="_blank" rel="noopener">💬 Bayar via WhatsApp</a>
+      <button class="btn btn-outline btn-block" data-close="modal-topup" style="margin-top:8px">Batal</button>
+    </div>
+  </div>
+
+  <!-- ============ SPIN RESULT ============ -->
+  <div class="modal-backdrop" id="modal-spin" hidden style="display:none">
+    <div class="modal modal-spin" id="modal-spin-box">
+      <h2 id="spin-result-title">🎉 Hasil Spin</h2>
+      <div id="spin-result-body"></div>
+      <button class="btn btn-gold btn-block" id="btn-spin-claim" type="button">🎉 Klaim</button>
+    </div>
+  </div>
+
+  <!-- ============ RANK UP ============ -->
+  <div id="rankup-overlay" class="rankup-overlay" hidden style="display:none" aria-hidden="true">
+    <div class="rankup-rays"></div>
+    <div class="rankup-inner">
+      <div class="rankup-kicker">🎉 SELAMAT! 🎉</div>
+      <div class="rankup-title">RANK UP!</div>
+      <div class="rankup-trans">
+        <div class="rankup-side old"><span id="rankup-old-icon"></span><span id="rankup-old-name"></span></div>
+        <div class="rankup-arrow">➡️</div>
+        <div class="rankup-side new"><span id="rankup-new-icon"></span><span id="rankup-new-name"></span></div>
+      </div>
+      <div class="rankup-stars" id="rankup-stars"></div>
+      <div class="rankup-hint">Ketuk di mana saja untuk lanjut 👆</div>
+    </div>
+  </div>
+
+  <!-- ============ ARENA ============ -->
+  <div class="modal-backdrop" id="modal-arena" hidden style="display:none">
+    <div class="modal modal-arena">
+      <div class="arena-spin">⚔️</div>
+      <h2>⚔️ Ranked</h2>
+      <div class="arena-rank" id="arena-rank">–</div>
+      <div class="arena-status" id="arena-status">Mencari lawan…</div>
+      <div class="arena-elapsed muted small" id="arena-elapsed">⏱️ 0 dtk</div>
+      <div class="muted small">⏱️ Tak ada lawan dalam 30 dtk → lawan pengganti otomatis</div>
+      <button class="btn btn-danger-ghost btn-block" id="btn-arena-cancel" type="button">✕ Batal Cari</button>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN ============ -->
+  <div class="modal-backdrop" id="modal-admin-login" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-admin-login">✕</button>
+      <h2>🔐 Admin</h2>
+      <p class="muted">Area khusus. Masukkan user &amp; sandi admin.</p>
+      <label class="field">User
+        <input id="adm-user" maxlength="24" placeholder="User admin" autocomplete="off" />
+      </label>
+      <label class="field">Sandi
+        <input id="adm-pass" type="password" maxlength="32" placeholder="••••••" autocomplete="off" />
+      </label>
+      <div class="form-error" id="adm-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="adm-login-submit" type="button">🔓 Masuk</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-account-login" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-account-login">✕</button>
+      <h2>🔑 Masuk Akun</h2>
+      <p class="muted">Mainkan akunmu di perangkat ini.</p>
+      <label class="field">Username / Email
+        <input id="al-login" maxlength="60" placeholder="cth: theo_king" autocomplete="username" />
+      </label>
+      <label class="field">Sandi
+        <input id="al-pass" type="password" maxlength="64" placeholder="••••••" autocomplete="current-password" />
+      </label>
+      <div class="form-error" id="al-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="al-submit" type="button">🔓 Masuk</button>
+      <button class="btn btn-ghost btn-block" id="al-forgot" type="button">Lupa sandi? Reset via email 📧</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-account-reset" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-account-reset">✕</button>
+      <h2>📧 Reset Sandi</h2>
+      <p class="muted" id="ar-info">Masukkan username / email akunmu. Kode 6 digit dikirim ke email (berlaku 10 menit).</p>
+      <div id="ar-step1">
+        <label class="field">Username / Email
+          <input id="ar-login" maxlength="60" placeholder="cth: theo_king" autocomplete="username" />
+        </label>
+        <div class="form-error" id="ar-error1" hidden></div>
+        <button class="btn btn-gold btn-lg btn-block" id="ar-send" type="button">📨 Kirim Kode</button>
+      </div>
+      <div id="ar-step2" hidden>
+        <label class="field">Kode 6 Digit
+          <input id="ar-code" maxlength="6" inputmode="numeric" placeholder="cth: 123456" autocomplete="one-time-code" />
+        </label>
+        <label class="field">Sandi Baru
+          <input id="ar-newpass" type="password" maxlength="64" placeholder="minimal 4 karakter" autocomplete="new-password" />
+        </label>
+        <div class="form-error" id="ar-error2" hidden></div>
+        <button class="btn btn-gold btn-lg btn-block" id="ar-confirm" type="button">✅ Reset & Masuk</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-admin" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-admin">✕</button>
+      <h2>🛠️ Panel Admin</h2>
+      <p class="muted" id="adm-mode">Kelola bintang akun.</p>
+      <label class="field">ID / Username Pemain
+        <input id="adm-target" maxlength="16" placeholder="cth: TK-AB22CD / theo_raja" autocomplete="off" />
+      </label>
+      <div class="adm-target-info" id="adm-target-info"></div>
+      <label class="field">Jumlah Bintang
+        <input id="adm-amount" type="number" min="0" max="99999" placeholder="cth: 100" />
+      </label>
+      <div class="form-error" id="adm-error2" hidden></div>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set" type="button">🎯 Ubah Jadi</button>
+      </div>
+      <div class="field-label">🪙 Kelola Koin</div>
+      <label class="field">Jumlah Koin
+        <input id="adm-amount-coin" type="number" min="0" max="999999" placeholder="cth: 500" />
+      </label>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add-coin" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set-coin" type="button">🎯 Ubah Jadi</button>
+      </div>
+      <div class="field-label">❤️ Kelola Suka</div>
+      <label class="field">Jumlah Suka
+        <input id="adm-amount-like" type="number" min="0" max="999999" placeholder="cth: 100" />
+      </label>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add-like" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set-like" type="button">🎯 Ubah Jadi</button>
+      </div>
+      <div class="field-label">✔️ Verified & 🎖️ Gelar</div>
+      <p class="muted small">Centang biru + gelar 👑 OWNER / 🛡️ ADMIN di belakang nama target.</p>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-verified-on" type="button">✔️ Verified ON</button>
+        <button class="btn btn-outline" id="adm-verified-off" type="button">❌ Verified OFF</button>
+      </div>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-title-owner" type="button">👑 Set Owner</button>
+        <button class="btn btn-outline" id="adm-title-admin" type="button">🛡️ Set Admin</button>
+        <button class="btn btn-outline" id="adm-title-none" type="button">🚫 Hapus Gelar</button>
+      </div>
+      <div class="field-label">🤖 Auto Main</div>
+      <p class="muted small">Tombol cheat melayang yang bisa diseret + menu curang khusus admin.</p>
+      <div class="adm-btns">
+        <button class="btn btn-outline" id="adm-cheat-toggle" type="button">🤖 Aktifkan Tombol Cheat</button>
+      </div>
+      <div class="field-label">🧾 Riwayat Sesi Ini</div>
+      <div class="adm-log" id="adm-log"></div>
+      <button class="btn btn-danger-ghost btn-block" id="adm-logout" type="button">🔒 Keluar Admin</button>
+    </div>
+  </div>
+
+  <!-- ============ CHEAT ADMIN ============ -->
+  <div class="modal-backdrop" id="modal-cheat" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-cheat">✕</button>
+      <h2>🤖 Menu Cheat <span class="muted small">— khusus admin</span></h2>
+      <div class="cheat-rows">
+        <div class="cheat-row">
+          <div><b>▶️ Auto Main</b><small>Komputer melangkah otomatis untukmu</small></div>
+          <button class="btn btn-outline btn-sm" id="cheat-auto" type="button">Mati</button>
+        </div>
+        <div class="cheat-row">
+          <div><b>🔮 Prediksi / Arahan</b><small>Panah langkah terbaik di papan</small></div>
+          <button class="btn btn-outline btn-sm" id="cheat-hint" type="button">Mati</button>
+        </div>
+        <label class="field">Kekuatan Auto Main
+          <select id="cheat-level">
+            <option value="easy">Mudah 🌱</option>
+            <option value="medium" selected>Sedang 🔥</option>
+            <option value="hard">Sulit 💀</option>
+          </select>
+        </label>
+        <div class="muted small" id="cheat-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INBOX ============ -->
+  <div class="modal-backdrop" id="modal-inbox" hidden style="display:none">
+    <div class="modal modal-scroll">
+      <button class="modal-x" data-close="modal-inbox">✕</button>
+      <h2>💌 Pesan <button class="btn btn-outline btn-sm" id="inbox-refresh" type="button" title="Muat ulang">🔄</button></h2>
+      <p class="muted">Teman, kabar update, event &amp; gift masuk ke sini.</p>
+      <div class="inbox-list" id="inbox-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PROFIL PEMAIN ============ -->
+  <div class="modal-backdrop" id="modal-player" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-player">✕</button>
+      <div id="player-body"></div>
+    </div>
+  </div>
+
+  <!-- ============ DETAIL MATCH ============ -->
+  <div class="modal-backdrop" id="modal-match" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-match">✕</button>
+      <div id="match-body"></div>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <div class="modal-backdrop" id="modal-leaderboard" hidden style="display:none">
+    <div class="modal modal-wide">
+      <button class="modal-x" data-close="modal-leaderboard">✕</button>
+      <h2>🏆 Rank Global</h2>
+      <p class="muted">Papan peringkat pemain TheofKing di perangkat ini.</p>
+      <div class="tabs">
+        <button class="tab active" data-lbtab="stars">⭐ Bintang</button>
+        <button class="tab" data-lbtab="streak">🔥 Streak</button>
+      </div>
+      <div class="lb-list" id="lb-list"></div>
+      <div class="lb-me" id="lb-me"></div>
+    </div>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div class="modal-backdrop" id="modal-result" hidden style="display:none">
+    <div class="modal modal-result">
+      <div class="result-trophy" id="result-trophy">🏆</div>
+      <h2 id="result-title">Kamu Menang!</h2>
+      <p class="muted" id="result-reason"></p>
+      <div class="result-stars" id="result-stars"></div>
+      <div class="result-rank" id="result-rank"></div>
+      <div class="result-streak" id="result-streak"></div>
+      <div class="result-actions">
+        <button class="btn btn-gold btn-lg" id="btn-result-rematch">⚔️ Rematch</button>
+        <button class="btn btn-outline btn-lg" id="btn-result-menu">🏠 Menu</button>
+      </div>
+      <p class="muted small" id="result-wait" hidden>Menunggu jawaban lawan…</p>
+    </div>
+  </div>
+
+  <!-- ============ HELP ============ -->
+  <div class="modal-backdrop" id="modal-help" hidden style="display:none">
+    <div class="modal modal-wide modal-scroll">
+      <button class="modal-x" data-close="modal-help">✕</button>
+      <h2>❓ Cara Bermain</h2>
+      <div class="help-grid">
+        <div class="help-block">
+          <h3>♟️ Gerakan Bidak</h3>
+          <ul>
+            <li><b>Pion:</b> maju 1 (2 dari posisi awal), makan menyerong, bisa promosi.</li>
+            <li><b>Kuda:</b> melompat bentuk “L”.</li>
+            <li><b>Gajah:</b> diagonal jauh.</li>
+            <li><b>Benteng:</b> lurus jauh.</li>
+            <li><b>Menteri:</b> lurus + diagonal jauh.</li>
+            <li><b>Raja:</b> 1 kotak ke segala arah + rokade.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>⭐ Sistem Rank &amp; Bintang</h3>
+          <ul>
+            <li>Menang = <b>+1 ⭐</b>, Kalah = <b>−1 ⭐</b>, Seri = tetap.</li>
+            <li>Setiap <b>5 kemenangan</b> (5 ⭐) naik 1 rank.</li>
+            <li>Urutan: 🥉 Bronze → 🥈 Silver → 🥇 Gold → 🔮 Mythic → 👑 King → ♛ Master.</li>
+            <li>Menangkan beruntun untuk 🔥 <b>streak</b>! Kalah membuat streak kembali 0.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>🌐 Main Online</h3>
+          <ul>
+            <li>Pilih <b>Online → Buat Room</b>, lalu bagikan <b>kode 6 digit</b> ke teman.</li>
+            <li>Teman pilih <b>Gabung Room</b> &amp; memasukkan kode itu.</li>
+            <li>Bisa chat, ajukan remis, dan rematch langsung.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>🖱️ Kontrol Papan</h3>
+          <ul>
+            <li><b>Klik/ketuk</b> bidak lalu kotak tujuan, atau <b>seret (drag)</b> bidaknya.</li>
+            <li>Titik hijau = langkah legal. Kotak merah = raja kena skak.</li>
+            <li>Tersedia jam catur, notasi, dan tombol menyerah/remis.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM ============ -->
+  <div class="modal-backdrop" id="modal-confirm" hidden style="display:none">
+    <div class="modal modal-small">
+      <h2 id="confirm-title">Yakin?</h2>
+      <p class="muted" id="confirm-message"></p>
+      <div class="result-actions">
+        <button class="btn btn-gold" id="confirm-ok">Ya</button>
+        <button class="btn btn-outline" id="confirm-cancel">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-root" class="toast-root"></div>
+  <canvas id="confetti"></canvas>
+
+  <script src="js/vendor/peerjs.min.js?v=34"></script>
+  <script type="module" src="js/app.js?v=34"></script>
+</body>
+</html>

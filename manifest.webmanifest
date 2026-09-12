@@ -1,0 +1,13 @@
+{
+  "name": "TheofKing — Catur Online & Offline",
+  "short_name": "TheofKing",
+  "description": "Game catur online & offline dengan rank Bronze → Master, bintang, streak, dan leaderboard global.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0e17",
+  "theme_color": "#0b0e17",
+  "lang": "id",
+  "icons": [
+    { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
