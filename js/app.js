@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=21';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=21';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=21';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=21';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=21';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=21';
-import { Game } from './game.js?v=21';
-import { preloadPieces } from './pieces.js?v=21';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=21';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=21';
-import { SKINS, skinById, applySkin } from './skins.js?v=21';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=21';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=22';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=22';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=22';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=22';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=22';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=22';
+import { Game } from './game.js?v=22';
+import { preloadPieces } from './pieces.js?v=22';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=22';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=22';
+import { SKINS, skinById, applySkin } from './skins.js?v=22';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=22';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;

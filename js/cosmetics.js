@@ -18,6 +18,16 @@ export const BORDERS = [
   { id: 'royal',   name: 'Mahkota Raja',   desc: 'Ungu + emas bangsawan', price: 150 },
   { id: 'galaxy',  name: 'Galaksi',        desc: 'Antariksa berbintang',  price: 175 },
   { id: 'mecha',   name: 'Mecha',          desc: 'Bingkai robot futuristik', price: 200 },
+  { id: 'jaring',  name: 'Jaring Laba-laba', desc: 'Bingkai jaring hero',   price: 250 },
+  { id: 'beku',    name: 'Raja Es',        desc: 'Bingkai kristal es',      price: 300 },
+  { id: 'siber',   name: 'Cyberpunk',      desc: 'Bingkai neon digital',    price: 400 },
+  { id: 'samurai', name: 'Samurai',        desc: 'Bingkai ksatria sakura',  price: 450 },
+  { id: 'titan',   name: 'Titan Emas',     desc: 'Bingkai robot raksasa',   price: 500 },
+  { id: 'neraka',  name: 'Neraka',         desc: 'Bingkai api neraka',      price: 600 },
+  { id: 'zeus',    name: 'Petir Zeus',     desc: 'Bingkai badai petir',     price: 700 },
+  { id: 'naga',    name: 'Naga',           desc: 'Bingkai naga perkasa',    price: 800 },
+  { id: 'tengkorak', name: 'Bayangan Tengkorak', desc: 'Bingkai kegelapan', price: 900 },
+  { id: 'nebula',  name: 'Nebula',         desc: 'Bingkai kosmik teragung', price: 1000 },
 ];
 
 export const AVATARS = [
@@ -41,6 +51,16 @@ export function avatarById(id) {
 
 const BORDER_IMG = {
   mecha: 'assets/frames/mecha.png',
+  jaring: 'assets/frames/jaring.png',
+  beku: 'assets/frames/beku.png',
+  siber: 'assets/frames/siber.png',
+  samurai: 'assets/frames/samurai.png',
+  titan: 'assets/frames/titan.png',
+  neraka: 'assets/frames/neraka.png',
+  zeus: 'assets/frames/zeus.png',
+  naga: 'assets/frames/naga.png',
+  tengkorak: 'assets/frames/tengkorak.png',
+  nebula: 'assets/frames/nebula.png',
 };
 
 /** Path gambar bingkai berbasis image, atau null bila CSS murni. */
