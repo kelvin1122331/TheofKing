@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=29';
+import { rankForStars } from './ranks.js?v=30';
 
 const PREFIX = 'tok.v1.';
 
@@ -36,7 +36,7 @@ export const store = {
   set profile(v) { write('profile', v); },
 
   get stats() {
-    const d = { stars: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, draws: 0, games: 0, coins: 0, protections: 0, likes: 0 };
+    const d = { stars: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, draws: 0, games: 0, coins: 0, protections: 0, likes: 0, changename: 0 };
     return { ...d, ...read('stats', {}) };
   },
   set stats(v) { write('stats', v); },
@@ -178,6 +178,30 @@ export function validateProfile(name, username) {
     return { ok: false, field: 'username', message: 'Username 3–16 karakter (huruf, angka, _).' };
   }
   return { ok: true, name, username };
+}
+
+/**
+ * Cek bentrok nama/username secara lokal (bot leaderboard + teman),
+ * kecuali milik sendiri. Return 'name' | 'username' | null.
+ */
+export function findLocalNameClash(name, username) {
+  const nm = String(name || '').trim().toLowerCase();
+  const un = String(username || '').trim().replace(/^@/, '').toLowerCase();
+  const mine = store.profile || {};
+  const myNm = String(mine.name || '').trim().toLowerCase();
+  const myUn = String(mine.username || '').trim().replace(/^@/, '').toLowerCase();
+  const unames = new Set();
+  const names = new Set();
+  for (const x of SEED_PLAYERS) {
+    unames.add(String(x.username).toLowerCase());
+    names.add(String(x.name).toLowerCase());
+  }
+  for (const f of (store.friends || [])) {
+    if (f && f.username) unames.add(String(f.username).toLowerCase());
+  }
+  if (un && un !== myUn && unames.has(un)) return 'username';
+  if (nm && nm !== myNm && names.has(nm)) return 'name';
+  return null;
 }
 
 const ID_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

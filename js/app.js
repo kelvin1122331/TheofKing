@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=29';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=29';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=29';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=29';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=29';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=29';
-import { Game } from './game.js?v=29';
-import { preloadPieces } from './pieces.js?v=29';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=29';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=29';
-import { SKINS, skinById, applySkin } from './skins.js?v=29';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=29';
+import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=30';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=30';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=30';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=30';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=30';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=30';
+import { Game } from './game.js?v=30';
+import { preloadPieces } from './pieces.js?v=30';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=30';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=30';
+import { SKINS, skinById, applySkin } from './skins.js?v=30';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=30';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -282,7 +282,7 @@ function initOnboarding() {
   updateAvatarPreview('#ob-avatar-preview');
   $('#ob-name').addEventListener('input', () => updateAvatarPreview('#ob-avatar-preview'));
   $('#ob-avatar-upload').addEventListener('change', (e) => handleAvatarUpload(e.target, '#ob-avatar-preview'));
-  $('#ob-submit').addEventListener('click', () => {
+  $('#ob-submit').addEventListener('click', async () => {
     const er = $('#ob-error');
     const fail = (msg) => { er.textContent = msg; er.hidden = false; sfx.illegal(); };
     const v = validateProfile($('#ob-name').value, $('#ob-username').value);
@@ -292,6 +292,16 @@ function initOnboarding() {
       return;
     }
     if (!obPicker.get()) { fail('Pilih negara asal kamu dulu ya 🚩'); return; }
+    const clash = findLocalNameClash(v.name, v.username);
+    if (clash === 'username') { fail('Username sudah dipakai pemain lain. Pilih yang lain ya.'); return; }
+    if (clash === 'name') { fail('Nama sudah dipakai pemain lain. Pilih yang lain ya.'); return; }
+    if (isServerOnline()) {
+      try {
+        const r = await Server.check(v.username, v.name, '');
+        if (r.usernameTaken) { fail('Username sudah dipakai di server. Pilih yang lain ya.'); return; }
+        if (r.nameTaken) { fail('Nama sudah dipakai di server. Pilih yang lain ya.'); return; }
+      } catch { /* server tak respons → cukup cek lokal */ }
+    }
     er.hidden = true;
     store.profile = { name: v.name, username: v.username, avatar: { ...avatarDraft }, country: obPicker.get(), id: makePlayerId(), createdAt: Date.now() };
     closeModal('modal-onboarding');
@@ -316,6 +326,8 @@ function openProfileModal() {
   updateAvatarPreview('#pf-avatar-preview', p.name);
   const st = store.stats;
   const r = rankForStars(st.stars);
+  document.getElementById('pf-changename-info').innerHTML =
+    `🎫 Kartu Ganti Nama: <b>${st.changename || 0}</b> <span class="muted small">— wajib untuk ganti nama/username • beli di Shop (100 🪙)</span>`;
   $('#profile-stats').innerHTML =
     `<span class="chip">${r.icon} ${r.name}</span><span class="chip">⭐ ${st.stars}</span>` +
     `<span class="chip">🔥 ${st.streak} (terbaik ${st.bestStreak})</span>` +
@@ -333,22 +345,43 @@ function initProfileModal() {
     renderPresetGrid('#pf-avatar-presets', '#pf-avatar-preview');
     updateAvatarPreview('#pf-avatar-preview');
   });
-  $('#pf-save').addEventListener('click', () => {
+  $('#pf-save').addEventListener('click', async () => {
+    const er = $('#pf-error');
+    const fail = (msg) => { er.textContent = msg; er.hidden = false; sfx.illegal(); };
     const v = validateProfile($('#pf-name').value, $('#pf-username').value);
-    if (!v.ok) {
-      const er = $('#pf-error');
-      er.textContent = v.message;
-      er.hidden = false;
-      sfx.illegal();
+    if (!v.ok) { fail(v.message); return; }
+    const p = store.profile || {};
+    const nameChanged = v.name !== (p.name || '');
+    const userChanged = v.username !== String(p.username || '').replace(/^@/, '');
+    const saveAll = () => {
+      store.profile = { ...p, name: v.name, username: v.username, avatar: { ...avatarDraft }, country: pfPicker.get() };
+      closeModal('modal-profile');
+      sfx.notify();
+      refreshStats();
+      schedulePush();
+    };
+    if (!nameChanged && !userChanged) {
+      saveAll();
+      toast('Profil disimpan! 💾', 'success');
       return;
     }
-    const p = store.profile || {};
-    store.profile = { ...p, name: v.name, username: v.username, avatar: { ...avatarDraft }, country: pfPicker.get() };
-    closeModal('modal-profile');
-    sfx.notify();
-    toast('Profil disimpan! 💾', 'success');
-    refreshStats();
-    schedulePush();
+    // ganti nama/username: wajib kartu + nama harus unik
+    if ((store.stats.changename || 0) < 1) { fail('Butuh 🎫 Kartu Ganti Nama! Beli di Shop (100 🪙).'); return; }
+    const local = findLocalNameClash(v.name, v.username);
+    if (local === 'username') { fail('Username sudah dipakai pemain lain. Pilih yang lain ya.'); return; }
+    if (local === 'name') { fail('Nama sudah dipakai pemain lain. Pilih yang lain ya.'); return; }
+    if (isServerOnline()) {
+      try {
+        const r = await Server.check(v.username, v.name, p.id || '');
+        if (r.usernameTaken) { fail('Username sudah dipakai di server. Pilih yang lain ya.'); return; }
+        if (r.nameTaken) { fail('Nama sudah dipakai di server. Pilih yang lain ya.'); return; }
+      } catch { /* server tak respons → cukup cek lokal */ }
+    }
+    const st = store.stats;
+    st.changename = (st.changename || 0) - 1;
+    saveStats(st);
+    saveAll();
+    toast(`Nama diganti! 🎫 tersisa ${st.changename}.`, 'success');
   });
   $('#pf-copy-id').addEventListener('click', async () => {
     sfx.click();
@@ -607,7 +640,7 @@ async function linkAccount() {
       } catch (e2) {
         if (e2.code === 409) {
           setServerReadonly(true);
-          if (!readonlyWarned) { readonlyWarned = true; toast('Username dipakai akun lain di server ⚠️', 'error'); }
+          if (!readonlyWarned) { readonlyWarned = true; toast((e2.message || 'Username dipakai akun lain') + ' ⚠️', 'error'); }
         }
       }
     }
@@ -2037,12 +2070,28 @@ function renderShop() {
   const equipped = store.settings.skin || 'wood';
   const owned = ownedSkins();
   document.getElementById('shop-balance').innerHTML =
-    `🪙 <b>${st.coins || 0}</b> &nbsp;•&nbsp; 🛡️ Proteksi: <b>${st.protections || 0}</b>`;
+    `🪙 <b>${st.coins || 0}</b> &nbsp;•&nbsp; 🛡️ Proteksi: <b>${st.protections || 0}</b> &nbsp;•&nbsp; 🎫 Ganti Nama: <b>${st.changename || 0}</b>`;
   document.getElementById('prot-owned').textContent =
     `Punya ${st.protections || 0} • otomatis dipakai saat kalah`;
   const pb = document.getElementById('btn-buy-prot');
   pb.textContent = 'Beli — 10 🪙';
   pb.disabled = (st.coins || 0) < 10;
+  document.getElementById('changename-owned').textContent =
+    `Punya ${st.changename || 0} • wajib untuk ganti nama/username`;
+  const cb = document.getElementById('btn-buy-changename');
+  cb.textContent = 'Beli — 100 🪙';
+  cb.disabled = (st.coins || 0) < 100;
+  cb.onclick = () => {
+    const cur = store.stats;
+    if ((cur.coins || 0) < 100) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
+    cur.coins -= 100;
+    cur.changename = (cur.changename || 0) + 1;
+    saveStats(cur);
+    sfx.buy();
+    toast('🎫 +1 Kartu Ganti Nama!', 'success');
+    document.dispatchEvent(new CustomEvent('tok:stats'));
+    renderShop();
+  };
   pb.onclick = () => {
     const cur = store.stats;
     if ((cur.coins || 0) < 10) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }

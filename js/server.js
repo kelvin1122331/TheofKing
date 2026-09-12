@@ -75,6 +75,7 @@ export const Server = {
   pull: (id) => api('/api/account/' + encodeURIComponent(id) + '?as=' + encodeURIComponent(id)),
   push: (id, data) => api('/api/account/' + encodeURIComponent(id), { method: 'PUT', body: data }),
   find: (q) => api('/api/account/find?q=' + encodeURIComponent(q)),
+  check: (username, name, except) => api('/api/account/check?username=' + encodeURIComponent(username || '') + '&name=' + encodeURIComponent(name || '') + '&except=' + encodeURIComponent(except || '')),
   leaderboard: (by, me) => api(`/api/leaderboard?by=${by}&limit=50${me ? '&me=' + encodeURIComponent(me) : ''}`),
   adminLogin: (user, pass) => api('/api/admin/login', { method: 'POST', body: { user, pass } }),
   adminFind: (token, q) => api('/api/admin/find?q=' + encodeURIComponent(q), { token }),

@@ -50,7 +50,7 @@ function saveSoon() {
 // ------------------------- validasi -------------------------
 const USER_RE = /^[a-zA-Z0-9_]{3,16}$/;
 const ID_RE = /^[A-Z0-9-]{3,24}$/i;
-const STAT_KEYS = ['stars', 'streak', 'bestStreak', 'wins', 'losses', 'draws', 'games', 'coins', 'protections'];
+const STAT_KEYS = ['stars', 'streak', 'bestStreak', 'wins', 'losses', 'draws', 'games', 'coins', 'protections', 'changename'];
 const cleanNum = (v, max = 1e7) => {
   v = Math.floor(Number(v));
   return Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : 0;
@@ -120,9 +120,13 @@ app.post('/api/account/register', (req, res) => {
   if (!USER_RE.test(username || '')) return res.status(400).json({ error: 'Username 3–16 karakter.' });
   const uid = String(id).toUpperCase();
   if (db.accounts[uid]) return res.json({ account: ownerAccount(db.accounts[uid]), existed: true });
-  const clash = Object.values(db.accounts).find((a) => a.username.toLowerCase() === String(username).toLowerCase());
-  if (clash) return res.status(409).json({ error: 'Username sudah dipakai akun lain.' });
   const p = cleanProfile(req.body);
+  const uclash = Object.values(db.accounts).find((a) => a.username.toLowerCase() === String(p.username).toLowerCase());
+  if (uclash) return res.status(409).json({ error: 'Username sudah dipakai akun lain.' });
+  if (p.name.trim()) {
+    const nclash = Object.values(db.accounts).find((a) => (a.name || '').toLowerCase() === p.name.trim().toLowerCase());
+    if (nclash) return res.status(409).json({ error: 'Nama sudah dipakai akun lain.' });
+  }
   const now = Date.now();
   db.accounts[uid] = {
     id: uid, ...p, createdAt: now, updatedAt: now, rev: 0,
@@ -140,6 +144,19 @@ app.get('/api/account/find', (req, res) => {
   const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
   if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
   res.json({ account: publicAccount(a) });
+});
+
+app.get('/api/account/check', (req, res) => {
+  const username = String(req.query.username || '').replace(/^@/, '').toLowerCase();
+  const name = String(req.query.name || '').trim().toLowerCase();
+  const except = String(req.query.except || '').toUpperCase();
+  let usernameTaken = false, nameTaken = false;
+  for (const a of Object.values(db.accounts)) {
+    if (except && a.id === except) continue;
+    if (username && (a.username || '').toLowerCase() === username) usernameTaken = true;
+    if (name && (a.name || '').toLowerCase() === name) nameTaken = true;
+  }
+  res.json({ usernameTaken, nameTaken });
 });
 
 app.get('/api/account/:id', (req, res) => {
@@ -162,6 +179,10 @@ app.put('/api/account/:id', (req, res) => {
       const clash = Object.values(db.accounts).find((x) => x.id !== uid && x.username.toLowerCase() === p.username.toLowerCase());
       if (clash) return res.status(409).json({ error: 'Username sudah dipakai akun lain.' });
       a.username = p.username;
+    }
+    if (p.name && p.name.trim()) {
+      const nclash = Object.values(db.accounts).find((x) => x.id !== uid && (x.name || '').toLowerCase() === p.name.trim().toLowerCase());
+      if (nclash) return res.status(409).json({ error: 'Nama sudah dipakai akun lain.' });
     }
     if (p.name) a.name = p.name;
     a.avatar = p.avatar;

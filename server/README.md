@@ -57,6 +57,7 @@ Alamat tersimpan otomatis di HP pemain.
 - `GET /api/account/:id?as=:id` — ambil data (milik sendiri = lengkap)
 - `PUT /api/account/:id` — simpan `{profile, stats, settings, friends, rev}`
 - `GET /api/account/find?q=` — cari akun (publik)
+- `GET /api/account/check?username=&name=&except=` — cek nama/username dipakai (`{usernameTaken, nameTaken}`)
 - `GET /api/leaderboard?by=stars|streak&me=:id` — peringkat global
 - `POST /api/admin/login` — `{user, pass}` → token
 - `GET /api/admin/find?q=` + `POST /api/admin/stars` — butuh header `X-Admin-Token`

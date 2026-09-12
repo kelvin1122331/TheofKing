@@ -2,7 +2,7 @@
 // AI catur: negamax + alpha-beta pruning + piece-square tables.
 // 3 level: easy (kedalaman 1 + ngawur), medium (2), hard (3).
 // ============================================================
-import { Chess } from './vendor/chess.js?v=29';
+import { Chess } from './vendor/chess.js?v=30';
 
 const VAL = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
 const MATE = 100000;
