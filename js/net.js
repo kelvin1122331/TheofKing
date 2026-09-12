@@ -7,6 +7,14 @@ export const ROOM_PREFIX = 'theofking-v1-room-';
 const GUEST_PREFIX = 'theofking-v1-g-';
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
+export const ARENA_BUCKET_MS = 5 * 60 * 1000; // slot matchmaking 5 menit
+
+/** Kode room arena deterministik: rank sama & slot waktu sama → bertemu. */
+export function arenaCodeFor(rankId, now = Date.now()) {
+  const bucket = Math.floor(now / ARENA_BUCKET_MS) % 10000;
+  return `ARENA-${String(rankId || 'bronze').toUpperCase()}-${String(bucket).padStart(4, '0')}`;
+}
+
 export function makeRoomCode() {
   let s = '';
   for (let i = 0; i < 6; i++) s += CODE_CHARS[(Math.random() * CODE_CHARS.length) | 0];
@@ -56,8 +64,8 @@ export class Net {
     }
   }
 
-  /** Host: buat room. Resolve { code } saat peer siap. Retry jika kode bentrok. */
-  host(preferCode = null, tries = 0) {
+  /** Host: buat room. Resolve { code } saat peer siap. Retry jika kode bentrok (kecuali strict). */
+  host(preferCode = null, tries = 0, strict = false) {
     this._ensurePeerLib();
     this.isHost = true;
     this.code = preferCode || makeRoomCode();
@@ -77,7 +85,7 @@ export class Net {
       });
       peer.on('connection', (conn) => this._handleIncoming(conn));
       peer.on('error', (err) => {
-        if (!settled && err?.type === 'unavailable-id' && tries < 4) {
+        if (!settled && err?.type === 'unavailable-id' && tries < 4 && !strict) {
           settled = true;
           clearTimeout(timer);
           try { peer.destroy(); } catch {}

@@ -2,16 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=11';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=11';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=11';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=11';
-import { Net, peerErrorMessage } from './net.js?v=11';
-import { Game } from './game.js?v=11';
-import { preloadPieces } from './pieces.js?v=11';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=11';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=11';
-import { SKINS, skinById, applySkin } from './skins.js?v=11';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=12';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=12';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=12';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=12';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=12';
+import { Game } from './game.js?v=12';
+import { preloadPieces } from './pieces.js?v=12';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=12';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=12';
+import { SKINS, skinById, applySkin } from './skins.js?v=12';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -464,6 +464,17 @@ function renderModeConfig() {
     }));
     renderPane();
     return;
+  } else if (selectedMode === 'arena') {
+    const r = rankForStars(store.stats.stars || 0);
+    box.innerHTML = `
+      <h3>⚔️ Arena Online <span class="muted small">— lawan acak se-rank, otomatis</span></h3>
+      <div class="arena-info">
+        <div>🏅 Rank kamu: <b>${r.icon} ${r.name}</b> • ⭐ ${store.stats.stars || 0}</div>
+        <div class="muted small">🎲 Warna acak • ⏱️ ${ARENA_TIME.label} • menang/kalah memengaruhi ⭐</div>
+      </div>
+      <button class="btn btn-gold btn-lg btn-block" id="btn-arena-search">⚔️ Cari Lawan Se-Rank</button>`;
+    $('#btn-arena-search').addEventListener('click', startArenaSearch);
+    return;
   }
   bindSeg(box, cfgState[selectedMode]);
   $('#btn-start-mode').addEventListener('click', startOfflineGame);
@@ -528,6 +539,162 @@ async function startOfflineGame() {
   game = new Game(cfg, { onMenu: goMenu });
   game.start();
   toast(cfg.mode === 'ai' ? `Melawan ${game.oppProfile().name}! Semangat! ⚔️` : 'Selamat bertanding! 🤝', 'gold');
+}
+
+// ------------------------- arena: matchmaking -------------------------
+const ARENA_TIME = { ms: 300000, inc: 0, label: '5 mnt' };
+let arena = null; // { active, round, fullOffset, startedAt, elapsedTimer, bucketWatch, bucket }
+
+function myRankId() {
+  return rankForStars(store.stats.stars || 0).id;
+}
+
+function setArenaStatus(t) {
+  const el = document.getElementById('arena-status');
+  if (el) el.textContent = t;
+}
+
+function updateArenaElapsed() {
+  if (!arena?.active) return;
+  const s = Math.floor((Date.now() - arena.startedAt) / 1000);
+  document.getElementById('arena-elapsed').textContent = `⏱️ ${s} dtk`;
+}
+
+function endArenaSearch() {
+  if (!arena) return;
+  arena.active = false;
+  clearInterval(arena.elapsedTimer);
+  clearInterval(arena.bucketWatch);
+  arena = null;
+}
+
+function cancelArenaSearch() {
+  if (!arena) { closeModal('modal-arena'); return; }
+  endArenaSearch();
+  cleanupNet();
+  closeModal('modal-arena');
+  sfx.click();
+  toast('Pencarian lawan dibatalkan.', 'gold');
+}
+
+function arenaFail(msg) {
+  endArenaSearch();
+  cleanupNet();
+  closeModal('modal-arena');
+  toast(msg, 'error');
+}
+
+async function startArenaSearch() {
+  unlockAudio();
+  sfx.click();
+  const me = currentProfile();
+  if (!me) { openModal('modal-onboarding'); return; }
+  if (arena?.active) return;
+  if (typeof Peer === 'undefined') {
+    toast('Butuh internet untuk Arena. Periksa koneksi lalu coba lagi 📶', 'error');
+    return;
+  }
+  const r = rankForStars(store.stats.stars || 0);
+  arena = { active: true, round: 0, fullOffset: 0, startedAt: Date.now(), bucket: Math.floor(Date.now() / ARENA_BUCKET_MS) };
+  document.getElementById('arena-rank').innerHTML = `${r.icon} <b>${r.name}</b> • ⭐ ${store.stats.stars || 0}`;
+  setArenaStatus('Mencari lawan se-rank…');
+  document.getElementById('arena-elapsed').textContent = '⏱️ 0 dtk';
+  openModal('modal-arena');
+  arena.elapsedTimer = setInterval(updateArenaElapsed, 1000);
+  arena.bucketWatch = setInterval(() => {
+    if (!arena?.active || lobby?.started || game) return;
+    const matched = lobby && (lobby.isHost ? !!lobby.guest : true);
+    if (matched) return;
+    if (Math.floor(Date.now() / ARENA_BUCKET_MS) !== arena.bucket) {
+      arena.bucket = Math.floor(Date.now() / ARENA_BUCKET_MS);
+      searchArenaRound(); // slot baru → cari ulang
+    }
+  }, 3000);
+  searchArenaRound();
+}
+
+/** Satu ronde: coba gabung bucket arena; kalau kosong, jadi host. */
+async function searchArenaRound() {
+  if (!arena?.active) return;
+  const round = ++arena.round;
+  const alive = () => arena?.active && arena.round === round;
+  cleanupNet();
+  const code = arenaCodeFor(myRankId(), Date.now() + arena.fullOffset * ARENA_BUCKET_MS);
+  setArenaStatus(arena.fullOffset > 0 ? 'Arena penuh, cari slot lain…' : 'Mencari lawan se-rank…');
+  net = new Net();
+  try {
+    await net.join(code);
+  } catch (err) {
+    if (!alive()) return;
+    if (err?.type === 'peer-unavailable') { hostArenaBucket(code, round); return; }
+    arenaFail(err?.message === 'TIMEOUT' ? 'Koneksi timeout. Coba lagi.' : peerErrorMessage(err));
+    return;
+  }
+  if (!alive()) return;
+  // ---- GUEST: handshake sambutan ----
+  const me = currentProfile();
+  setArenaStatus('Lawan ditemukan! Menghubungkan…');
+  try {
+    const welcome = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('TIMEOUT')), 18000);
+      net.onData = (msg) => {
+        if (msg?.t === 'welcome') { clearTimeout(timer); resolve(msg); }
+        else if (msg?.t === 'lobby_full') { clearTimeout(timer); reject(new Error('FULL')); }
+      };
+      net.onClose = () => { clearTimeout(timer); reject(new Error('CLOSED')); };
+      net.send({ t: 'join', profile: me, stats: snapshotStats() });
+    });
+    if (!alive()) return;
+    lobby = {
+      code, isHost: false, started: false, arena: true,
+      guest: { profile: me, stats: snapshotStats() },
+      host: { profile: welcome.profile, stats: welcome.stats },
+      config: welcome.config,
+    };
+    net.onData = onLobbyNetData;
+    net.onClose = onLobbyNetClose;
+    net.onError = (e) => console.warn('net', e);
+    net.send({ t: 'ready' });
+    setArenaStatus(`Lawan ditemukan: ${welcome.profile?.name || '???'}! Bersiap…`);
+    // menunggu pesan 'start' dari host → startOnlineGame
+  } catch (err) {
+    if (!alive()) return;
+    if (err?.message === 'FULL' || err?.message === 'CLOSED') {
+      arena.fullOffset++;
+      searchArenaRound();
+      return;
+    }
+    arenaFail(err?.message === 'TIMEOUT' ? 'Host tidak menjawab. Coba lagi.' : peerErrorMessage(err));
+  }
+}
+
+/** Jadi host bucket arena lalu tunggu tamu se-rank. */
+async function hostArenaBucket(code, round) {
+  const alive = () => arena?.active && arena.round === round;
+  cleanupNet();
+  net = new Net();
+  setArenaStatus('Menunggu lawan se-rank bergabung…');
+  try {
+    await net.host(code, 0, true);
+  } catch (err) {
+    if (!alive()) return;
+    if (err?.type === 'unavailable-id') { searchArenaRound(); return; } // balapan: lawan jadi host duluan → gabung
+    arenaFail(err?.message === 'TIMEOUT' ? 'Koneksi timeout. Coba lagi.' : peerErrorMessage(err));
+    return;
+  }
+  if (!alive()) return;
+  const me = currentProfile();
+  const hostColor = Math.random() < 0.5 ? 'w' : 'b';
+  lobby = {
+    code, isHost: true, started: false, guest: null, arena: true,
+    host: { profile: me, stats: snapshotStats() },
+    config: { timeMs: ARENA_TIME.ms, incMs: ARENA_TIME.inc, timeLabel: ARENA_TIME.label, hostColor, guestColor: hostColor === 'w' ? 'b' : 'w' },
+  };
+  net.onGuest = () => { /* tunggu pesan join */ };
+  net.onData = onLobbyNetData; // join → welcome; ready → mulai otomatis
+  net.onClose = onLobbyNetClose;
+  net.onError = (e) => console.warn('net', e);
+  sfx.notify();
 }
 
 // ------------------------- online: lobby -------------------------
@@ -698,6 +865,10 @@ function onLobbyNetData(msg) {
         sysChat(`🎉 ${msg.profile?.name || 'Lawan'} bergabung!`);
         renderLobby();
         break;
+      case 'ready':
+        // arena: tamu siap → langsung mulai otomatis
+        if (lobby.arena && lobby.guest && !lobby.started) startOnlineGame();
+        break;
       case 'leave':
         lobby.guest = null;
         sysChat('Lawan keluar room.');
@@ -734,6 +905,11 @@ function onLobbyNetClose() {
       toast('Lawan terputus 📡', 'error');
     }
   } else {
+    if (lobby.arena && !lobby.started && arena?.active) {
+      setArenaStatus('Host hilang, mencari lagi…');
+      searchArenaRound();
+      return;
+    }
     toast('Terputus dari host 📡', 'error');
     goMenu();
   }
@@ -742,6 +918,8 @@ function onLobbyNetClose() {
 async function startOnlineGame() {
   if (!lobby || lobby.started) return;
   lobby.started = true;
+  closeModal('modal-arena');
+  endArenaSearch();
   const me = currentProfile();
   const myColor = lobby.isHost ? lobby.config.hostColor : lobby.config.guestColor;
   const oppEntry = lobby.isHost ? lobby.guest : lobby.host;
@@ -802,6 +980,7 @@ async function startOnlineGame() {
 }
 
 function initLobby() {
+  $('#btn-arena-cancel').addEventListener('click', cancelArenaSearch);
   $('#btn-copy-code').addEventListener('click', async () => {
     sfx.click();
     if (!lobby) return;
@@ -1011,7 +1190,7 @@ function init() {
   $$('.modal-backdrop').forEach((m) => {
     m.addEventListener('click', (e) => {
       if (e.target !== m) return;
-      if (['modal-onboarding', 'modal-result', 'modal-confirm'].includes(m.id)) return;
+      if (['modal-onboarding', 'modal-result', 'modal-confirm', 'modal-arena'].includes(m.id)) return;
       closeModal(m.id);
     });
   });
