@@ -2,14 +2,15 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=7';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=7';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=7';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=7';
-import { Net, peerErrorMessage } from './net.js?v=7';
-import { Game } from './game.js?v=7';
-import { preloadPieces } from './pieces.js?v=7';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=7';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=8';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=8';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=8';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=8';
+import { Net, peerErrorMessage } from './net.js?v=8';
+import { Game } from './game.js?v=8';
+import { preloadPieces } from './pieces.js?v=8';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=8';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=8';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -83,7 +84,7 @@ function renderChip() {
   if (!p) { chip.innerHTML = '👤 Masuk'; return; }
   const r = rankForStars(store.stats.stars);
   chip.innerHTML = `${avatarHTML(p, 32)}
-    <span class="pinfo"><span class="pname">${esc(p.name)}</span>
+    <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${esc(p.name)}</span>
     <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span></span>`;
 }
 
@@ -126,6 +127,67 @@ function renderRecent() {
       <span class="opp">${esc(r.opp || '')} • ${modeName[r.mode] || r.mode} • ${r.moves || 0} langkah</span>
       <span class="dt">${fmtTimeAgo(r.at)}</span>
     </div>`).join('');
+}
+
+// ------------------------- pemilih negara -------------------------
+let obPicker = null;
+let pfPicker = null;
+
+function closeAllCountryDrops() {
+  if (obPicker) obPicker.close();
+  if (pfPicker) pfPicker.close();
+}
+
+function createCountryPicker(prefix) {
+  const btn = document.getElementById(`${prefix}-country-btn`);
+  const drop = document.getElementById(`${prefix}-country-drop`);
+  const search = document.getElementById(`${prefix}-country-search`);
+  const list = document.getElementById(`${prefix}-country-list`);
+  let value = null; // kode ISO, mis. 'ID'
+  const paintBtn = () => {
+    const c = value ? countryByCode(value) : null;
+    btn.innerHTML = c
+      ? `<span class="flag">${flagEmoji(c.code)}</span><span>${esc(c.name)}</span><span class="caret">▾</span>`
+      : `<span class="flag">🏳️</span><span class="muted">Pilih negara...</span><span class="caret">▾</span>`;
+  };
+  const renderList = (filter = '') => {
+    const f = filter.trim().toLowerCase();
+    const items = !f ? COUNTRIES : COUNTRIES.filter((c) =>
+      c.name.toLowerCase().includes(f) || c.code.toLowerCase() === f);
+    let html = `<button type="button" class="country-item ${!value ? 'active' : ''}" data-code=""><span class="flag">🏳️</span><span>Tanpa bendera</span></button>`;
+    html += items.map((c) =>
+      `<button type="button" class="country-item ${c.code === value ? 'active' : ''}" data-code="${c.code}"><span class="flag">${flagEmoji(c.code)}</span><span>${esc(c.name)}</span></button>`
+    ).join('');
+    if (!items.length) html += `<div class="country-empty">Tidak ditemukan. Coba kata lain.</div>`;
+    list.innerHTML = html;
+  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sfx.click();
+    const willOpen = drop.hidden;
+    closeAllCountryDrops();
+    drop.hidden = !willOpen;
+    if (willOpen) { search.value = ''; renderList(''); setTimeout(() => search.focus(), 30); }
+  });
+  search.addEventListener('input', () => renderList(search.value));
+  search.addEventListener('click', (e) => e.stopPropagation());
+  drop.addEventListener('click', (e) => e.stopPropagation());
+  list.addEventListener('click', (e) => {
+    const item = e.target.closest('.country-item');
+    if (!item) return;
+    value = item.dataset.code || null;
+    paintBtn();
+    renderList(search.value);
+    drop.hidden = true;
+    sfx.click();
+  });
+  paintBtn();
+  renderList('');
+  return {
+    get: () => value,
+    set: (code) => { value = code || null; paintBtn(); renderList(''); },
+    close: () => { const was = !drop.hidden; drop.hidden = true; return was; },
+  };
 }
 
 // ------------------------- onboarding & profil -------------------------
@@ -192,6 +254,7 @@ function handleAvatarUpload(inputEl, previewId) {
 
 function initOnboarding() {
   renderPresetGrid('#ob-avatar-presets', '#ob-avatar-preview');
+  obPicker = createCountryPicker('ob');
   updateAvatarPreview('#ob-avatar-preview');
   $('#ob-name').addEventListener('input', () => updateAvatarPreview('#ob-avatar-preview'));
   $('#ob-avatar-upload').addEventListener('change', (e) => handleAvatarUpload(e.target, '#ob-avatar-preview'));
@@ -210,7 +273,7 @@ function initOnboarding() {
       sfx.illegal();
       return;
     }
-    store.profile = { name: v.name, username: v.username, avatar: { ...avatarDraft }, createdAt: Date.now() };
+    store.profile = { name: v.name, username: v.username, avatar: { ...avatarDraft }, country: obPicker.get(), createdAt: Date.now() };
     closeModal('modal-onboarding');
     sfx.start();
     toast(`Selamat datang, ${v.name}! 👑`, 'gold');
@@ -225,6 +288,7 @@ function openProfileModal() {
   renderPresetGrid('#pf-avatar-presets', '#pf-avatar-preview');
   $('#pf-name').value = p.name;
   $('#pf-username').value = p.username;
+  pfPicker.set(p.country || null);
   $('#pf-error').hidden = true;
   updateAvatarPreview('#pf-avatar-preview', p.name);
   const st = store.stats;
@@ -237,6 +301,7 @@ function openProfileModal() {
 }
 
 function initProfileModal() {
+  pfPicker = createCountryPicker('pf');
   $('#pf-name').addEventListener('input', () => updateAvatarPreview('#pf-avatar-preview'));
   $('#pf-avatar-upload').addEventListener('change', (e) => handleAvatarUpload(e.target, '#pf-avatar-preview'));
   $('#pf-avatar-skip').addEventListener('click', () => {
@@ -255,7 +320,7 @@ function initProfileModal() {
       return;
     }
     const p = store.profile || {};
-    store.profile = { ...p, name: v.name, username: v.username, avatar: { ...avatarDraft } };
+    store.profile = { ...p, name: v.name, username: v.username, avatar: { ...avatarDraft }, country: pfPicker.get() };
     closeModal('modal-profile');
     sfx.notify();
     toast('Profil disimpan! 💾', 'success');
@@ -291,7 +356,7 @@ function renderLeaderboard() {
     <div class="lb-row ${r.me ? 'me' : ''}">
       <span class="pos">${medal(r.pos)}</span>
       ${avatarHTML(r, 40)}
-      <span class="who"><span class="n">${esc(r.name)}${r.me ? ' (Kamu)' : ''}</span><br>
+      <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${esc(r.name)}${r.me ? ' (Kamu)' : ''}</span><br>
       <span class="u">@${esc(r.username)} • ${r.rank.icon} ${r.rank.name}</span></span>
       <span class="score">${lbTab === 'stars' ? '⭐ ' + r.stars : '🔥 ' + r.streak}</span>
     </div>`).join('');
@@ -577,7 +642,7 @@ function renderLobby() {
 function lobbyCardHTML(entry, tag) {
   const r = rankForStars(entry.stats?.stars || 0);
   return `${avatarHTML(entry.profile, 54)}
-    <span class="lname">${esc(entry.profile.name)}</span>
+    <span class="lname">${flagFor(entry.profile) ? flagFor(entry.profile) + " " : ""}${esc(entry.profile.name)}</span>
     <span class="lrank">${r.icon} ${r.name} • ⭐ ${entry.stats?.stars || 0} • 🔥 ${entry.stats?.streak || 0}</span>
     <span class="mode-tag ${tag === 'HOST' ? 'on' : 'off'}">${tag}</span>`;
 }
@@ -810,8 +875,10 @@ function init() {
       closeModal(m.id);
     });
   });
+  document.addEventListener('click', closeAllCountryDrops);
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
     for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }

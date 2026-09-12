@@ -1,9 +1,10 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=7';
-import { rankForStars, rankProgress } from './ranks.js?v=7';
-import { sfx } from './sound.js?v=7';
+import { avatarGradientFor, initialsFor } from './store.js?v=8';
+import { rankForStars, rankProgress } from './ranks.js?v=8';
+import { sfx } from './sound.js?v=8';
+import { flagFor } from './countries.js?v=8';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -143,16 +144,22 @@ const VS_MS = 2800; // sinkron dengan animasi .vs-bar di CSS
  * Tampilkan intro "VS" sebelum pertandingan. Resolve saat selesai/dilewati.
  * @param {object} o { me, opp, meSub, oppSub, modeLabel, sub }
  */
+function vsName(p, fallback) {
+  const nm = (p && p.name) || fallback;
+  const fl = flagFor(p);
+  return fl ? `${fl} ${nm}` : nm;
+}
+
 export function showVsSplash(o = {}) {
   return new Promise((resolve) => {
     const ov = document.getElementById('vs-splash');
     if (!ov) { resolve(); return; }
     document.getElementById('vs-mode').textContent = o.modeLabel || 'Pertandingan';
     document.getElementById('vs-me-avatar').innerHTML = avatarHTML(o.me, 84);
-    document.getElementById('vs-me-name').textContent = (o.me && o.me.name) || 'Kamu';
+    document.getElementById('vs-me-name').textContent = vsName(o.me, 'Kamu');
     document.getElementById('vs-me-rank').innerHTML = o.meSub || '';
     document.getElementById('vs-opp-avatar').innerHTML = avatarHTML(o.opp, 84);
-    document.getElementById('vs-opp-name').textContent = (o.opp && o.opp.name) || 'Lawan';
+    document.getElementById('vs-opp-name').textContent = vsName(o.opp, 'Lawan');
     document.getElementById('vs-opp-rank').innerHTML = o.oppSub || '';
     document.getElementById('vs-sub').textContent = o.sub || '';
     const setStreak = (id, n) => {

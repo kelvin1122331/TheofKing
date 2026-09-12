@@ -2,17 +2,18 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=7';
-import { Board } from './board.js?v=7';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=7';
-import { sfx } from './sound.js?v=7';
-import { store, saveStats, pushRecent } from './store.js?v=7';
-import { applyResult, rankForStars } from './ranks.js?v=7';
+import { Chess } from './vendor/chess.js?v=8';
+import { Board } from './board.js?v=8';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=8';
+import { sfx } from './sound.js?v=8';
+import { store, saveStats, pushRecent } from './store.js?v=8';
+import { applyResult, rankForStars } from './ranks.js?v=8';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog,
-} from './ui.js?v=7';
-import { pieceSrc } from './pieces.js?v=7';
+} from './ui.js?v=8';
+import { pieceSrc } from './pieces.js?v=8';
+import { flagFor } from './countries.js?v=8';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -424,7 +425,7 @@ export class Game {
       el.innerHTML = `
         ${avatarHTML(prof, 42)}
         <div class="pmeta">
-          <div class="pname"><span class="color-dot ${color}"></span><span>${esc(prof.name)}${isMe && this.cfg.mode !== 'local' ? ' (Kamu)' : ''}</span></div>
+          <div class="pname"><span class="color-dot ${color}"></span><span>${flagFor(prof) ? flagFor(prof) + ' ' : ''}${esc(prof.name)}${isMe && this.cfg.mode !== 'local' ? ' (Kamu)' : ''}</span></div>
           <div class="psub">
             ${rank ? `<span>${rank.icon} ${rank.name}</span>` : `<span>@${esc(prof.username || 'lawan')}</span>`}
             ${stars != null ? `<span>⭐ ${stars}</span>` : ''}

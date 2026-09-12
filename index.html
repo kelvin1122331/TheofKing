@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -334,6 +334,14 @@
       <label class="field">Username <span class="req">*</span>
         <input id="ob-username" maxlength="16" placeholder="cth: theo_king (3–16 karakter)" autocomplete="username" />
       </label>
+      <div class="field-label">🚩 Negara Asal <span class="muted small">(opsional)</span></div>
+      <div class="country-picker">
+        <button type="button" class="country-btn" id="ob-country-btn"></button>
+        <div class="country-drop" id="ob-country-drop" hidden>
+          <input id="ob-country-search" placeholder="🔍 Cari negara..." autocomplete="off" />
+          <div class="country-list" id="ob-country-list"></div>
+        </div>
+      </div>
       <div class="form-error" id="ob-error" hidden></div>
       <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🚀 Mulai Bermain</button>
     </div>
@@ -360,6 +368,14 @@
       <label class="field">Username <span class="req">*</span>
         <input id="pf-username" maxlength="16" />
       </label>
+      <div class="field-label">🚩 Negara Asal <span class="muted small">(opsional)</span></div>
+      <div class="country-picker">
+        <button type="button" class="country-btn" id="pf-country-btn"></button>
+        <div class="country-drop" id="pf-country-drop" hidden>
+          <input id="pf-country-search" placeholder="🔍 Cari negara..." autocomplete="off" />
+          <div class="country-list" id="pf-country-list"></div>
+        </div>
+      </div>
       <div class="form-error" id="pf-error" hidden></div>
       <div class="profile-stats" id="profile-stats"></div>
       <button class="btn btn-gold btn-lg btn-block" id="pf-save">💾 Simpan Profil</button>
@@ -460,7 +476,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=7"></script>
-  <script type="module" src="js/app.js?v=7"></script>
+  <script src="js/vendor/peerjs.min.js?v=8"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>

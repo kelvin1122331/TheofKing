@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=7';
+import { rankForStars } from './ranks.js?v=8';
 
 const PREFIX = 'tok.v1.';
 
@@ -76,21 +76,21 @@ export function pushRecent(entry) {
 // ------------------------- Leaderboard -------------------------
 
 const SEED_PLAYERS = [
-  { name: 'Magnus Carlsen',   username: 'magnus',      emoji: '🐐', stars: 58, streak: 14 },
-  { name: 'Hikaru Nakamura',  username: 'hikaru',      emoji: '⚡', stars: 51, streak: 9 },
-  { name: 'Gotham Chess',     username: 'gothamchess', emoji: '🏙️', stars: 47, streak: 11 },
-  { name: 'Irene Sukandar',   username: 'irene_wim',   emoji: '🇮🇩', stars: 42, streak: 7 },
-  { name: 'Gajah Mada',       username: 'gajah_mada',  emoji: '🐘', stars: 38, streak: 8 },
-  { name: 'Susanto Megaranto',username: 'susan_to',    emoji: '🔥', stars: 34, streak: 5 },
-  { name: 'Raja Jawa',        username: 'raja_jawa',   emoji: '👑', stars: 29, streak: 6 },
-  { name: 'Kuda Lumping',     username: 'kuda_lumping',emoji: '🐴', stars: 25, streak: 4 },
-  { name: 'Fabiano Caruana',  username: 'fabiano',     emoji: '🎯', stars: 22, streak: 3 },
-  { name: 'Ding Liren',       username: 'ding',        emoji: '🐼', stars: 19, streak: 5 },
-  { name: 'Anak Senja',       username: 'anak_senja',  emoji: '🌇', stars: 15, streak: 2 },
-  { name: 'Alireza Firouzja', username: 'alireza',     emoji: '🚀', stars: 12, streak: 4 },
-  { name: 'Tukang Skak',      username: 'tukang_skak', emoji: '🔨', stars: 8,  streak: 3 },
-  { name: 'Pion Balap',       username: 'pion_balap',  emoji: '🏎️', stars: 5,  streak: 2 },
-  { name: 'Pemula Santuy',    username: 'pemula',      emoji: '🌱', stars: 2,  streak: 1 },
+  { name: 'Magnus Carlsen',   username: 'magnus', country: 'NO',      emoji: '🐐', stars: 58, streak: 14 },
+  { name: 'Hikaru Nakamura',  username: 'hikaru', country: 'US',      emoji: '⚡', stars: 51, streak: 9 },
+  { name: 'Gotham Chess',     username: 'gothamchess', country: 'US', emoji: '🏙️', stars: 47, streak: 11 },
+  { name: 'Irene Sukandar',   username: 'irene_wim', country: 'ID',   emoji: '🇮🇩', stars: 42, streak: 7 },
+  { name: 'Gajah Mada',       username: 'gajah_mada', country: 'ID',  emoji: '🐘', stars: 38, streak: 8 },
+  { name: 'Susanto Megaranto',username: 'susan_to', country: 'ID',    emoji: '🔥', stars: 34, streak: 5 },
+  { name: 'Raja Jawa',        username: 'raja_jawa', country: 'ID',   emoji: '👑', stars: 29, streak: 6 },
+  { name: 'Kuda Lumping',     username: 'kuda_lumping', country: 'ID',emoji: '🐴', stars: 25, streak: 4 },
+  { name: 'Fabiano Caruana',  username: 'fabiano', country: 'US',     emoji: '🎯', stars: 22, streak: 3 },
+  { name: 'Ding Liren',       username: 'ding', country: 'CN',        emoji: '🐼', stars: 19, streak: 5 },
+  { name: 'Anak Senja',       username: 'anak_senja', country: 'ID',  emoji: '🌇', stars: 15, streak: 2 },
+  { name: 'Alireza Firouzja', username: 'alireza', country: 'FR',     emoji: '🚀', stars: 12, streak: 4 },
+  { name: 'Tukang Skak',      username: 'tukang_skak', country: 'ID', emoji: '🔨', stars: 8,  streak: 3 },
+  { name: 'Pion Balap',       username: 'pion_balap', country: 'ID',  emoji: '🏎️', stars: 5,  streak: 2 },
+  { name: 'Pemula Santuy',    username: 'pemula', country: 'ID',      emoji: '🌱', stars: 2,  streak: 1 },
 ];
 
 function seedLeaderboard() {
@@ -110,6 +110,7 @@ export function getLeaderboard(by = 'stars') {
   const rows = seeds.map((s) => ({
     id: s.id, name: s.name, username: s.username,
     emoji: s.emoji, bot: true, me: false,
+    country: s.country || null,
     stars: s.stars, streak: s.streak,
     rank: rankForStars(s.stars),
   }));
@@ -117,6 +118,7 @@ export function getLeaderboard(by = 'stars') {
     rows.push({
       id: 'me', name: profile.name, username: profile.username,
       avatar: profile.avatar, bot: false, me: true,
+      country: profile.country || null,
       stars: stats.stars || 0, streak: stats.streak || 0,
       rank: rankForStars(stats.stars || 0),
     });
