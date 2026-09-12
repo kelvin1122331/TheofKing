@@ -14,6 +14,17 @@ const { WebSocketServer } = require('ws');
 let nodemailer = null;
 try { nodemailer = require('nodemailer'); } catch { /* email nonaktif bila tak terinstal */ }
 
+// muat server/.env bila ada (JANGAN commit file ini!) — env asli tetap menang
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+    }
+  }
+} catch { /* abaikan */ }
+
 const PORT = Number(process.env.PORT || 3000);
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const ADMIN_USER = process.env.ADMIN_USER || 'theoid';

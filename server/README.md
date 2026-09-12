@@ -96,7 +96,8 @@ Alamat tersimpan otomatis di HP pemain.
    SMTP_USER=emailkamu@gmail.com SMTP_PASS=xxxxxxxxxxxxxxxx \
    npm start
    ```
-   (Di Railway/Render/VPS: isi variabel yang sama di pengaturan env.)
+   (Di Railway/Render/VPS: isi variabel yang sama di pengaturan env.
+   Alternatif lokal: tulis ke file `server/.env` — otomatis dimuat, jangan di-commit.)
 4. Tanpa SMTP, endpoint reset tetap jalan tapi `sent:false` dan kode
    dicatat di log server (untuk tes / dibantu admin).
 
