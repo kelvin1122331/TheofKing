@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=28';
-import { rankForStars, rankProgress } from './ranks.js?v=28';
-import { sfx } from './sound.js?v=28';
-import { flagFor } from './countries.js?v=28';
-import { borderImg, borderFx } from './cosmetics.js?v=28';
+import { avatarGradientFor, initialsFor } from './store.js?v=29';
+import { rankForStars, rankProgress } from './ranks.js?v=29';
+import { sfx } from './sound.js?v=29';
+import { flagFor } from './countries.js?v=29';
+import { borderImg, borderFx, avatarImg } from './cosmetics.js?v=29';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -115,7 +115,7 @@ export function avatarHTML(profileOrSeed, size = 40) {
     inner = esc(av.data);
     style = `background:${avatarGradientFor(p.username)};`;
   } else if (av && av.type === 'premium' && av.data) {
-    inner = `<img src="assets/avatars/${esc(av.data)}.png" alt="avatar" />`;
+    inner = `<img src="${avatarImg(esc(av.data))}" alt="avatar" />`;
   } else if (p.emoji) {
     inner = esc(p.emoji);
     style = `background:${avatarGradientFor(p.username)};`;

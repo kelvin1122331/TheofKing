@@ -40,6 +40,7 @@ export const AVATARS = [
   { id: 'knight',  name: 'Ksatria Emas', emoji: '🛡️', price: 120 },
   { id: 'dragon',  name: 'Naga Langit',  emoji: '🐉', price: 150 },
   { id: 'nightmare', name: 'Mimpi Buruk', emoji: '👁️', price: 150 },
+  { id: 'garuda', name: 'Garuda Emas', emoji: '🦅', price: 10000, animated: true, file: 'garuda.gif' },
 ];
 
 export function borderById(id) {
@@ -80,7 +81,8 @@ export function borderImg(id) {
 }
 
 export function avatarImg(id) {
-  return `assets/avatars/${id}.png`;
+  const a = AVATARS.find((x) => x.id === id);
+  return `assets/avatars/${a?.file || (id + '.png')}`;
 }
 
 export const NICKFX = [
