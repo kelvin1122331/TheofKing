@@ -2,14 +2,14 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=6';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=6';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=6';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=6';
-import { Net, peerErrorMessage } from './net.js?v=6';
-import { Game } from './game.js?v=6';
-import { preloadPieces } from './pieces.js?v=6';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=6';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=7';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=7';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=7';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=7';
+import { Net, peerErrorMessage } from './net.js?v=7';
+import { Game } from './game.js?v=7';
+import { preloadPieces } from './pieces.js?v=7';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=7';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -433,6 +433,8 @@ async function startOfflineGame() {
     me, opp,
     meSub: `${r.icon} ${r.name} • ⭐ ${store.stats.stars || 0}`,
     oppSub, modeLabel, sub,
+    meStreak: store.stats.streak || 0,
+    oppStreak: 0,
   });
   cleanupGame();
   $('#panel-chat').hidden = true;
@@ -694,6 +696,8 @@ async function startOnlineGame() {
       oppSub: `${or.icon} ${or.name} • ⭐ ${cfg.opp.stars || 0}`,
       modeLabel: '🌐 ONLINE 1 VS 1',
       sub: `⏱️ ${lobby.config.timeLabel} • Kamu: ${myColor === 'w' ? '⬜ Putih' : '⬛ Hitam'}`,
+      meStreak: store.stats.streak || 0,
+      oppStreak: (oppEntry.stats && oppEntry.stats.streak) || 0,
     });
   }
   if (!lobby || !net || !net.connected) {

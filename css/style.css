@@ -636,6 +636,18 @@ input { font-family: inherit; }
 .vs-overlay.play .vs-badge { animation: vsPop 0.5s cubic-bezier(0.2, 1.8, 0.4, 1) 0.45s forwards, vsPulse 1.1s ease-in-out 1s infinite; }
 @keyframes vsPop { from { opacity: 0; transform: scale(0) rotate(-30deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 @keyframes vsPulse { 50% { transform: scale(1.1); box-shadow: 0 0 74px rgba(245, 192, 68, 0.9); } }
+.vs-avatar-wrap { position: relative; display: inline-block; }
+.vs-streak {
+  position: absolute; right: -8px; bottom: -4px;
+  min-width: 32px; height: 32px; padding: 0 8px;
+  border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 800; color: #fff; white-space: nowrap;
+  background: linear-gradient(135deg, #ff7a3d, #e63923);
+  border: 2px solid #0b0e17;
+  box-shadow: 0 4px 14px rgba(230, 57, 35, 0.55);
+}
+.vs-overlay.play .vs-streak { animation: vsStreakPop 0.45s cubic-bezier(0.2, 1.8, 0.4, 1) 0.8s backwards; }
+@keyframes vsStreakPop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
 .vs-sub { color: var(--muted); font-weight: 600; font-size: 0.9rem; min-height: 1.4em; }
 .vs-bar { height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); margin: 14px auto 10px; max-width: 320px; overflow: hidden; }
 .vs-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-deep), var(--gold), var(--gold-2)); transform-origin: left; transform: scaleX(1); }
@@ -650,6 +662,7 @@ input { font-family: inherit; }
   .vs-name { font-size: 0.9rem; }
   .vs-rank { font-size: 0.72rem; }
   .vs-card { padding: 14px 8px; border-radius: 16px; }
+  .vs-streak { min-width: 28px; height: 28px; font-size: 0.65rem; right: -6px; }
 }
 
 /* ============================================================

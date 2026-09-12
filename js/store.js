@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=6';
+import { rankForStars } from './ranks.js?v=7';
 
 const PREFIX = 'tok.v1.';
 

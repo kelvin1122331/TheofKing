@@ -1,9 +1,9 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=6';
-import { rankForStars, rankProgress } from './ranks.js?v=6';
-import { sfx } from './sound.js?v=6';
+import { avatarGradientFor, initialsFor } from './store.js?v=7';
+import { rankForStars, rankProgress } from './ranks.js?v=7';
+import { sfx } from './sound.js?v=7';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -155,6 +155,13 @@ export function showVsSplash(o = {}) {
     document.getElementById('vs-opp-name').textContent = (o.opp && o.opp.name) || 'Lawan';
     document.getElementById('vs-opp-rank').innerHTML = o.oppSub || '';
     document.getElementById('vs-sub').textContent = o.sub || '';
+    const setStreak = (id, n) => {
+      const el = document.getElementById(id);
+      if (n && n >= 1) { el.textContent = `${n}x \uD83D\uDD25`; el.hidden = false; }
+      else el.hidden = true;
+    };
+    setStreak('vs-me-streak', o.meStreak);
+    setStreak('vs-opp-streak', o.oppStreak);
     ov.style.display = 'flex';
     ov.classList.remove('play');
     void ov.offsetWidth; // paksa reflow agar animasi mengulang

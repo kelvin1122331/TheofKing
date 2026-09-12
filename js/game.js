@@ -2,17 +2,17 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=6';
-import { Board } from './board.js?v=6';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=6';
-import { sfx } from './sound.js?v=6';
-import { store, saveStats, pushRecent } from './store.js?v=6';
-import { applyResult, rankForStars } from './ranks.js?v=6';
+import { Chess } from './vendor/chess.js?v=7';
+import { Board } from './board.js?v=7';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=7';
+import { sfx } from './sound.js?v=7';
+import { store, saveStats, pushRecent } from './store.js?v=7';
+import { applyResult, rankForStars } from './ranks.js?v=7';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog,
-} from './ui.js?v=6';
-import { pieceSrc } from './pieces.js?v=6';
+} from './ui.js?v=7';
+import { pieceSrc } from './pieces.js?v=7';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
