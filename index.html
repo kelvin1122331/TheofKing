@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=2" />
 </head>
 <body>
   <div class="bg-decor" aria-hidden="true">
@@ -202,7 +202,7 @@
   </footer>
 
   <!-- ============ ONBOARDING ============ -->
-  <div class="modal-backdrop show" id="modal-onboarding" hidden>
+  <div class="modal-backdrop show" id="modal-onboarding" hidden style="display:none">
     <div class="modal modal-profile">
       <div class="modal-crown">👑</div>
       <h2>Selamat Datang di <span class="gold-text">TheofKing</span>!</h2>
@@ -229,7 +229,7 @@
   </div>
 
   <!-- ============ EDIT PROFILE ============ -->
-  <div class="modal-backdrop" id="modal-profile" hidden>
+  <div class="modal-backdrop" id="modal-profile" hidden style="display:none">
     <div class="modal modal-profile">
       <button class="modal-x" data-close="modal-profile">✕</button>
       <h2>👤 Profil Saya</h2>
@@ -257,7 +257,7 @@
   </div>
 
   <!-- ============ LEADERBOARD ============ -->
-  <div class="modal-backdrop" id="modal-leaderboard" hidden>
+  <div class="modal-backdrop" id="modal-leaderboard" hidden style="display:none">
     <div class="modal modal-wide">
       <button class="modal-x" data-close="modal-leaderboard">✕</button>
       <h2>🏆 Rank Global</h2>
@@ -272,7 +272,7 @@
   </div>
 
   <!-- ============ RESULT ============ -->
-  <div class="modal-backdrop" id="modal-result" hidden>
+  <div class="modal-backdrop" id="modal-result" hidden style="display:none">
     <div class="modal modal-result">
       <div class="result-trophy" id="result-trophy">🏆</div>
       <h2 id="result-title">Kamu Menang!</h2>
@@ -289,7 +289,7 @@
   </div>
 
   <!-- ============ HELP ============ -->
-  <div class="modal-backdrop" id="modal-help" hidden>
+  <div class="modal-backdrop" id="modal-help" hidden style="display:none">
     <div class="modal modal-wide modal-scroll">
       <button class="modal-x" data-close="modal-help">✕</button>
       <h2>❓ Cara Bermain</h2>
@@ -335,7 +335,7 @@
   </div>
 
   <!-- ============ CONFIRM ============ -->
-  <div class="modal-backdrop" id="modal-confirm" hidden>
+  <div class="modal-backdrop" id="modal-confirm" hidden style="display:none">
     <div class="modal modal-small">
       <h2 id="confirm-title">Yakin?</h2>
       <p class="muted" id="confirm-message"></p>
@@ -349,7 +349,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script src="js/vendor/peerjs.min.js?v=2"></script>
+  <script type="module" src="js/app.js?v=2"></script>
 </body>
 </html>

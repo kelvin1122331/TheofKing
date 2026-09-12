@@ -17,11 +17,15 @@ export function esc(s) {
 // ------------------------- Modal -------------------------
 export function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.hidden = false;
+  if (!m) return;
+  m.hidden = false;
+  m.style.display = '';
 }
 export function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.hidden = true;
+  if (!m) return;
+  m.hidden = true;
+  m.style.display = 'none';
 }
 export function anyModalOpen() {
   return $$('.modal-backdrop').some((m) => !m.hidden);
