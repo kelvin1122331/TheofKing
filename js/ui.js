@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=26';
-import { rankForStars, rankProgress } from './ranks.js?v=26';
-import { sfx } from './sound.js?v=26';
-import { flagFor } from './countries.js?v=26';
-import { borderImg, borderFx } from './cosmetics.js?v=26';
+import { avatarGradientFor, initialsFor } from './store.js?v=27';
+import { rankForStars, rankProgress } from './ranks.js?v=27';
+import { sfx } from './sound.js?v=27';
+import { flagFor } from './countries.js?v=27';
+import { borderImg, borderFx } from './cosmetics.js?v=27';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];

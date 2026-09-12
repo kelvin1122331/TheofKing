@@ -1205,3 +1205,77 @@ body { touch-action: manipulation; }
 @keyframes rankup-nudge { 50% { transform: translateX(8px); } }
 .rankup-stars { font-size: 1.25rem; font-weight: 900; color: var(--gold); margin-top: 6px; animation: rankup-drop 0.6s 0.8s both; }
 .rankup-hint { margin-top: 18px; color: var(--muted); font-size: 0.9rem; animation: vsBlink 1.4s 1.2s infinite; }
+
+/* ---------- skin Naga Api (super eksklusif) ---------- */
+.skin-dragonfire { --sq-light: #ffd9a8; --sq-dark: #8a2b0e; }
+.board-frame:has(.skin-dragonfire) { --frame-1: #5c1503; --frame-2: #220701; animation: frame-blaze 2.6s ease-in-out infinite; }
+@keyframes frame-blaze {
+  0%, 100% { box-shadow: var(--shadow), inset 0 2px 6px rgba(255,255,255,0.15), 0 0 0 2px rgba(245,192,68,0.35), 0 0 18px rgba(255,100,0,0.45); }
+  50% { box-shadow: var(--shadow), inset 0 2px 6px rgba(255,255,255,0.15), 0 0 0 2px rgba(255,150,40,0.85), 0 0 46px rgba(255,80,0,0.85); }
+}
+.board.skin-dragonfire .sq.light { animation: sq-flicker 3s ease-in-out infinite; }
+.board.skin-dragonfire .sq.dark { animation: sq-flicker 3s ease-in-out 1.5s infinite; }
+@keyframes sq-flicker { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.14); } }
+.board.skin-dragonfire .piece img { filter: sepia(1) saturate(2.6) hue-rotate(-15deg) brightness(1.05) drop-shadow(0 0 6px rgba(255,120,20,0.85)); }
+.skin-prev.skin-dragonfire { animation: sq-flicker 3s ease-in-out infinite; box-shadow: 0 0 14px rgba(255,100,0,0.6); }
+
+/* ---------- FX naga (hanya saat skin Naga Api dipakai) ---------- */
+.board-fx { display: none; }
+.board-frame:has(.skin-dragonfire) .board-fx { display: block; }
+.board-fx { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.board-fx::after {
+  content: ''; position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+  box-shadow: inset 0 0 60px 24px rgba(255, 90, 0, 0.55), inset 0 0 120px 40px rgba(255, 180, 40, 0.3);
+  opacity: 0; animation: edge-flare 5s ease-in-out infinite;
+}
+@keyframes edge-flare {
+  0%, 66%, 100% { opacity: 0; }
+  74%, 86% { opacity: 1; }
+}
+.dragon-fly {
+  position: absolute; width: 37%; transform: translateX(-50%);
+  animation: dragon-patrol 12s ease-in-out infinite;
+}
+@keyframes dragon-patrol {
+  0% { left: 6%; top: -3%; rotate: -5deg; }
+  25% { left: 50%; top: -8%; rotate: 0deg; }
+  50% { left: 94%; top: -3%; rotate: 5deg; }
+  75% { left: 50%; top: -8%; rotate: 0deg; }
+  100% { left: 6%; top: -3%; rotate: -5deg; }
+}
+.dragon-inner { position: relative; animation: dragon-face 12s ease-in-out infinite, dragon-bob 2.4s ease-in-out infinite; }
+@keyframes dragon-face {
+  0%, 49.9% { scale: -1 1; }
+  50%, 100% { scale: 1 1; }
+}
+@keyframes dragon-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+.dragon-img, .dragon-fire { display: block; width: 100%; mix-blend-mode: screen; }
+.dragon-fire {
+  position: absolute; left: -72%; top: 6%; width: 95%;
+  transform-origin: right center; opacity: 0;
+  animation: fire-burst 5s ease-in-out infinite;
+}
+@keyframes fire-burst {
+  0%, 66% { opacity: 0; transform: scale(0.2, 0.6); }
+  72% { opacity: 1; transform: scale(1.05, 1); }
+  78% { opacity: 1; transform: scale(1, 1.18); }
+  84% { opacity: 0.9; transform: scale(1.02, 0.95); }
+  90%, 100% { opacity: 0; transform: scale(0.3, 0.5); }
+}
+.ember {
+  position: absolute; bottom: 6%; width: 7px; height: 7px; border-radius: 50%;
+  background: #ffb428; box-shadow: 0 0 8px 3px rgba(255, 120, 20, 0.8);
+  opacity: 0; animation: ember-rise 3.2s ease-in infinite;
+}
+.ember.e1 { left: 12%; animation-delay: 0s; }
+.ember.e2 { left: 38%; animation-delay: 0.8s; animation-duration: 2.7s; }
+.ember.e3 { left: 64%; animation-delay: 1.6s; }
+.ember.e4 { left: 86%; animation-delay: 2.3s; animation-duration: 2.9s; }
+@keyframes ember-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-280px) translateX(24px) scale(0.3); opacity: 0; }
+}
