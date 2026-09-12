@@ -61,6 +61,13 @@ Alamat tersimpan otomatis di HP pemain.
 - `POST /api/admin/login` — `{user, pass}` → token
 - `GET /api/admin/find?q=` + `POST /api/admin/stars` — butuh header `X-Admin-Token`
 - `POST /api/admin/coins` — kelola koin `{target, mode, amount}` (butuh token)
+- `POST /api/notify/friend` — notifikasi tambah teman `{fromId, toId}`
+- `GET /api/inbox/:id?as=:id` — pesan pribadi + kabar global
+- `POST /api/inbox/:id/read` — tandai dibaca `{as, ids}`
+- `POST /api/like` — suka akun `{fromId, toId}` (1x per akun)
+- `POST /api/admin/broadcast` — kabar global `{title, body}` (butuh token)
+- `POST /api/admin/gift` — gift `{target|ALL, coins, stars}` (butuh token)
+- `POST /api/admin/likes` — kelola suka `{target, mode, amount}` (butuh token)
 - `WS /ws` — antre arena: kirim `{t:'queue', id, rank, profile, stats}`,
   terima `{t:'matched', role, code, opp}` lalu sambung P2P seperti biasa.
 

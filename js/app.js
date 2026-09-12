@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=16';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=16';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=16';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=16';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=16';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=16';
-import { Game } from './game.js?v=16';
-import { preloadPieces } from './pieces.js?v=16';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=16';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=16';
-import { SKINS, skinById, applySkin } from './skins.js?v=16';
-import { BORDERS, AVATARS, borderById, avatarById, avatarImg } from './cosmetics.js?v=16';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=17';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=17';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=17';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=17';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=17';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=17';
+import { Game } from './game.js?v=17';
+import { preloadPieces } from './pieces.js?v=17';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=17';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=17';
+import { SKINS, skinById, applySkin } from './skins.js?v=17';
+import { BORDERS, AVATARS, borderById, avatarById, avatarImg } from './cosmetics.js?v=17';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -137,15 +137,16 @@ function refreshStats() {
 
 function renderRecent() {
   const list = store.recent || [];
+  lastRecent = list;
   const panel = $('#recent-panel');
   if (!list.length) { panel.hidden = true; return; }
   panel.hidden = false;
   const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online' };
   const resName = { win: 'Menang', loss: 'Kalah', draw: 'Seri' };
-  $('#recent-list').innerHTML = list.map((r) => `
-    <div class="recent-item">
+  $('#recent-list').innerHTML = list.map((r, i) => `
+    <div class="recent-item" data-ri="${i}" style="cursor:pointer" title="Lihat detail">
       <span class="r ${r.result}">${r.result === 'win' ? '🏆' : r.result === 'loss' ? '💔' : '🤝'} ${resName[r.result]}</span>
-      <span class="opp">${esc(r.opp || '')} • ${modeName[r.mode] || r.mode} • ${r.moves || 0} langkah</span>
+      <span class="opp">${esc(((r.opp && typeof r.opp === 'object') ? r.opp.name : r.opp) || '')} • ${modeName[r.mode] || r.mode} • ${r.moves || 0} langkah</span>
       <span class="dt">${fmtTimeAgo(r.at)}</span>
     </div>`).join('');
 }
@@ -375,15 +376,20 @@ function openLeaderboard() {
   openModal('modal-leaderboard');
 }
 
+let lastLbRows = [];
+let lastRecent = [];
+
 function paintLeaderboard(rows, meRank) {
+  lastLbRows = rows;
   const medal = (pos) => (pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`);
-  $('#lb-list').innerHTML = rows.map((r) => `
-    <div class="lb-row ${r.me ? 'me' : ''}">
+  $('#lb-list').innerHTML = rows.map((r, i) => `
+    <div class="lb-row ${r.me ? 'me' : ''}" data-lbi="${i}" style="cursor:pointer" title="Lihat profil">
       <span class="pos">${medal(r.pos)}</span>
       ${avatarHTML(r, 40)}
       <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${esc(r.name)}${r.me ? ' (Kamu)' : ''}</span><br>
       <span class="u">@${esc(r.username)} • ${r.rank.icon} ${r.rank.name}</span></span>
       <span class="score">${lbTab === 'stars' ? '⭐ ' + r.stars : '🔥 ' + r.streak}</span>
+      <span class="lb-likes">❤️ ${r.likes || 0}</span>
     </div>`).join('');
   $('#lb-me').innerHTML = meRank ? `Peringkatmu: <b>#${meRank}</b> dari ${rows.length} pemain 🌍` : '';
 }
@@ -399,7 +405,7 @@ function renderLeaderboard() {
       paintLeaderboard(lb.players.map((x, i) => ({
         id: x.id, name: x.name, username: x.username, avatar: x.avatar, bot: false,
         me: !!myId && x.id === myId, country: x.country || null, avatarBorder: x.avatarBorder || null,
-        stars: x.stars, streak: x.streak, rank: rankForStars(x.stars), pos: i + 1,
+        stars: x.stars, streak: x.streak, likes: x.likes || 0, rank: rankForStars(x.stars), pos: i + 1,
       })), lb.meRank);
     }).catch(() => { /* tetap tampilkan lokal */ });
   }
@@ -573,7 +579,11 @@ async function initServerLink() {
   paintServerStatus();
   const ok = await checkServer();
   paintServerStatus();
-  if (ok) linkAccount();
+  if (ok) {
+    linkAccount();
+    fetchInbox();
+    if (!inboxTimer) { inboxTimer = setInterval(fetchInbox, 60000); if (inboxTimer && inboxTimer.unref) inboxTimer.unref(); }
+  }
 }
 
 async function linkAccount() {
@@ -994,7 +1004,7 @@ async function joinRoom() {
 
 function snapshotStats() {
   const st = store.stats;
-  return { stars: st.stars || 0, streak: st.streak || 0, wins: st.wins || 0, skin: store.settings.skin || 'wood' };
+  return { stars: st.stars || 0, streak: st.streak || 0, wins: st.wins || 0, likes: st.likes || 0, skin: store.settings.skin || 'wood' };
 }
 
 function enterLobby() {
@@ -1143,7 +1153,7 @@ async function startOnlineGame() {
     isHost: lobby.isHost,
   };
   // sematkan bintang lawan untuk tampilan
-  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0, skin: oppEntry.stats?.skin || 'wood' };
+  cfg.opp = { ...oppEntry.profile, stars: oppEntry.stats?.stars || 0, skin: oppEntry.stats?.skin || 'wood', likes: oppEntry.stats?.likes || 0 };
   net.onData = (msg) => (game ? game.onNetMessage(msg) : onLobbyNetData(msg));
   net.onClose = () => {
     if (!game) {
@@ -1280,6 +1290,203 @@ async function submitAddFriend() {
   toast(`@${r.username} jadi temanmu! 👥`, 'success');
   renderFriends();
   schedulePush();
+  if (isServerOnline()) Server.notify(currentProfile()?.id, r.id).catch(() => {});
+}
+
+// ------------------------- modal pemain & match -------------------------
+function getLikedMap() {
+  try { return JSON.parse(localStorage.getItem('tok.v1.liked') || '{}'); } catch { return {}; }
+}
+function hasLiked(id) {
+  if (!id) return false;
+  return !!getLikedMap()[String(id).toUpperCase()];
+}
+function markLiked(id, n) {
+  try {
+    const m = getLikedMap();
+    m[String(id).toUpperCase()] = n || 0;
+    localStorage.setItem('tok.v1.liked', JSON.stringify(m));
+  } catch { /* abaikan */ }
+}
+
+function rowFromAccount(a) {
+  if (!a) return null;
+  const myId = currentProfile()?.id;
+  const st = a.stats || {};
+  const isMe = !!myId && a.id === myId;
+  return {
+    id: a.id, name: a.name, username: a.username, avatar: a.avatar || null,
+    avatarBorder: a.avatarBorder || null, bot: false, me: isMe,
+    country: a.country || null, stars: st.stars || 0, streak: st.streak || 0,
+    likes: a.likes || 0, rank: rankForStars(st.stars || 0),
+    pos: isMe ? (myGlobalRank('stars') || null) : null,
+  };
+}
+
+function paintLbLikes(id, likes) {
+  const rows = lastLbRows || [];
+  const idx = rows.findIndex((x) => x.id === id);
+  if (idx < 0) return;
+  rows[idx].likes = likes;
+  const el = document.querySelector(`#lb-list .lb-row[data-lbi="${idx}"] .lb-likes`);
+  if (el) el.textContent = `❤️ ${likes}`;
+}
+
+function openPlayerModal(row) {
+  if (!row) return;
+  const myId = currentProfile()?.id || 'me';
+  const isMe = !!row.me || (row.id && row.id === myId);
+  const liked = hasLiked(row.id);
+  const canLike = !isMe && !row.bot && !!row.id && isServerOnline() && !liked;
+  const why = row.bot ? '🤖 Bot tidak bisa disukai' : !isServerOnline() ? '📴 Butuh server untuk suka' : '';
+  const c = row.country ? countryByCode(row.country) : null;
+  const rk = rankForStars(row.stars || 0);
+  document.getElementById('player-body').innerHTML = `
+    <div class="pm-wrap">
+      <div class="pm-face">${avatarHTML(row, 76)}</div>
+      <h2 class="pm-name">${esc(row.name || '–')}</h2>
+      <div class="pm-sub">${row.username ? '@' + esc(row.username) + ' • ' : ''}${esc(row.id || '')}${isMe ? ' • <b>Ini kamu</b>' : ''}${row.bot ? ' • 🤖 Bot' : ''}</div>
+      <div class="pm-rank">${rk.icon} ${esc(rk.name)}</div>
+      <div class="pm-grid">
+        <div><b>${row.pos ? '#' + row.pos : '#–'}</b><span>Rank</span></div>
+        <div><b>⭐ ${row.stars || 0}</b><span>Bintang</span></div>
+        <div><b>❤️ <span id="pm-likes-n">${row.likes || 0}</span></b><span>Suka</span></div>
+        <div><b>${row.country ? flagEmoji(row.country) : '–'}</b><span>${esc(c ? c.name : 'Negara')}</span></div>
+      </div>
+      ${isMe ? '' : `<button class="btn btn-gold pm-like" id="pm-like" type="button" ${canLike ? '' : 'disabled'}>${liked ? '❤️ Disukai' : canLike ? '❤️ Suka' : esc(why)}</button>`}
+    </div>`;
+  const btn = document.getElementById('pm-like');
+  if (btn && canLike) {
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const r = await Server.like(myId, row.id);
+        const n = (r && typeof r.likes === 'number') ? r.likes : (row.likes || 0) + 1;
+        markLiked(row.id, n);
+        const nn = document.getElementById('pm-likes-n'); if (nn) nn.textContent = n;
+        btn.textContent = '❤️ Disukai';
+        paintLbLikes(row.id, n);
+        sfx.buy();
+        toast(`❤️ Kamu menyukai ${row.name || 'pemain'}!`, 'success');
+      } catch (err) {
+        if (err && err.code === 409) {
+          markLiked(row.id, row.likes || 0);
+          btn.textContent = '❤️ Disukai';
+        } else {
+          btn.disabled = false;
+          toast('Gagal memberi suka.', 'error');
+        }
+      }
+    };
+  }
+  openModal('modal-player');
+}
+
+function openMatchModal(r) {
+  if (!r) return;
+  const me = currentProfile() || {};
+  const st = store.stats || {};
+  const o = (r.opp && typeof r.opp === 'object') ? r.opp : { name: (typeof r.opp === 'string' && r.opp) || 'Lawan' };
+  const big = r.result === 'win' ? ['MENANG 🎉', 'win'] : r.result === 'loss' ? ['KALAH 😞', 'loss'] : ['SERI 🤝', 'draw'];
+  const modeName = { ai: 'vs Komputer', local: 'vs Teman', online: 'Online' };
+  const dt = r.at ? new Date(r.at) : null;
+  const when = dt && !isNaN(dt) ? dt.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const REASON_ID = { checkmate: 'Skakmat', resign: 'Menyerah', timeout: 'Waktu habis', agreement: 'Sepakat seri', stalemate: 'Stalemate', fifty: 'Aturan 50 langkah', material: 'Buah tidak cukup' };
+  const why = REASON_ID[r.reason] || '';
+  const side = (tag, p) => {
+    const cc = p.country ? countryByCode(p.country) : null;
+    return `<div class="mm-side">
+      <div class="mm-tag">${tag}</div>
+      <div class="mm-face">${avatarHTML(p, 60)}</div>
+      <div class="mm-name">${esc(p.name || '–')}</div>
+      <div class="mm-sub">${p.country ? esc(flagEmoji(p.country) + ' ' + (cc ? cc.name : p.country)) : '–'}</div>
+      <div class="mm-stats">⭐ ${p.stars == null ? '–' : p.stars} &nbsp; ❤️ ${p.likes == null ? '–' : p.likes}</div>
+    </div>`;
+  };
+  document.getElementById('match-body').innerHTML = `
+    <div class="mm-result ${big[1]}">${big[0]}</div>
+    <div class="mm-meta">${esc(modeName[r.mode] || r.mode || '')} • ${r.moves || 0} langkah${when ? ' • ' + esc(when) : ''}${why ? ' • ' + esc(why) : ''}</div>
+    <div class="mm-vs">
+      ${side('KAMU', { ...me, stars: st.stars || 0, likes: st.likes || 0 })}
+      <div class="mm-x">VS</div>
+      ${side('LAWAN', { avatar: o.avatar || null, avatarBorder: o.avatarBorder || null, name: o.name || 'Lawan', username: o.username || '', country: o.country || null, stars: (typeof o.stars === 'number' ? o.stars : null), likes: (typeof o.likes === 'number' ? o.likes : null) })}
+    </div>`;
+  openModal('modal-match');
+}
+
+// ------------------------- inbox -------------------------
+let inboxCache = { messages: [], feed: [] };
+let inboxTimer = null;
+
+function feedSeen() {
+  try { return Number(localStorage.getItem('tok.v1.feedseen')) || 0; } catch { return 0; }
+}
+function saveFeedSeen(v) {
+  try { localStorage.setItem('tok.v1.feedseen', v); } catch { /* abaikan */ }
+}
+
+function unreadInboxCount() {
+  const unread = inboxCache.messages.filter((m) => !m.read).length;
+  const seen = feedSeen();
+  const fresh = inboxCache.feed.filter((f) => f.at > seen).length;
+  return unread + fresh;
+}
+
+function paintInboxBadge() {
+  const n = unreadInboxCount();
+  const el = document.getElementById('inbox-count');
+  if (!el) return;
+  el.textContent = n > 99 ? '99+' : n;
+  el.hidden = n === 0;
+}
+
+async function fetchInbox() {
+  const p = currentProfile();
+  if (!p?.id || !isServerOnline()) return;
+  try {
+    inboxCache = await Server.inbox(p.id);
+    paintInboxBadge();
+    if (!document.getElementById('modal-inbox').hidden) renderInbox(true);
+  } catch { /* abaikan */ }
+}
+
+function openInbox() {
+  if (!currentProfile()) { openModal('modal-onboarding'); return; }
+  renderInbox(true);
+  openModal('modal-inbox');
+  fetchInbox();
+}
+
+function renderInbox(mark) {
+  const box = document.getElementById('inbox-list');
+  const items = [
+    ...inboxCache.messages.map((m) => ({ ...m, mine: true })),
+    ...inboxCache.feed.map((f) => ({ id: 'f' + f.at, title: (f.kind === 'gift' ? '' : '📢 ') + f.title, body: f.body, at: f.at, kind: f.kind, mine: false, read: f.at <= feedSeen() })),
+  ].sort((x, y) => y.at - x.at);
+  if (!items.length) {
+    box.innerHTML = `<div class="inbox-empty">${isServerOnline() ? '💌 Belum ada pesan.' : '📴 Butuh server untuk pesan 🌐'}</div>`;
+    return;
+  }
+  box.innerHTML = items.map((m) => {
+    const icon = m.type === 'friend' ? '👥' : (m.type === 'gift' || m.kind === 'gift') ? '🎁' : '📢';
+    const acts = m.type === 'friend' && m.data
+      ? `<div class="msg-acts"><button class="btn btn-gold btn-sm" data-inbox-add="${esc(m.data.id)}|${esc(m.data.username)}" type="button">➕ Tambah Balik</button><button class="btn btn-outline btn-sm" data-inbox-view="${esc(m.data.id)}" type="button">👤 Lihat</button></div>`
+      : '';
+    return `<div class="msg-row ${m.read ? '' : 'unread'}">
+      <span class="msg-icon">${icon}</span>
+      <div class="msg-body"><b>${esc(m.title)}</b><p>${esc(m.body)}</p><small>${fmtTimeAgo(m.at)}</small>${acts}</div>
+    </div>`;
+  }).join('');
+  if (mark) {
+    const ids = inboxCache.messages.filter((m) => !m.read).map((m) => m.id);
+    inboxCache.messages.forEach((m) => { m.read = true; });
+    let mx = feedSeen();
+    inboxCache.feed.forEach((f) => { mx = Math.max(mx, f.at); });
+    saveFeedSeen(mx);
+    paintInboxBadge();
+    const p = currentProfile();
+    if (ids.length && p?.id) Server.inboxRead(p.id, ids).catch(() => {});
+  }
 }
 
 // ------------------------- admin -------------------------
@@ -1452,6 +1659,45 @@ async function applyAdminCoins(mode) {
   renderAdminLog();
   sfx.buy();
   toast(mode === 'set' ? `Koin @${t.username} jadi ${st.coins}! 🎯` : `+${n} 🪙 untuk @${t.username}!`, 'success');
+}
+
+async function applyAdminLikes(mode) {
+  const t = await resolveAdminTargetAsync();
+  const er = document.getElementById('adm-error2');
+  const scope = (isServerOnline() && adminToken) ? 'di server' : 'di perangkat ini';
+  if (!t) { er.textContent = `Akun tidak ditemukan ${scope} 🔍`; er.hidden = false; sfx.illegal(); return; }
+  const n = Math.floor(Number(document.getElementById('adm-amount-like').value));
+  const lo = mode === 'set' ? 0 : 1;
+  if (!Number.isFinite(n) || n < lo || n > 999999) {
+    er.textContent = mode === 'set' ? 'Suka harus 0–999999 🎯' : 'Suka harus 1–999999 ➕';
+    er.hidden = false; sfx.illegal(); return;
+  }
+  er.hidden = true;
+  if (t.server && adminToken) {
+    try {
+      const r = await Server.adminLikes(adminToken, document.getElementById('adm-target').value.trim(), mode, n);
+      adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${r.account.username}: ${r.before} → ${r.after} ❤️ 🌐`);
+      if (r.account.id === currentProfile()?.id) pullAccount();
+      renderAdminTarget();
+      renderAdminLog();
+      sfx.buy();
+      toast(mode === 'set' ? `Suka @${r.account.username} jadi ${r.after}! 🎯` : `+${n} ❤️ untuk @${r.account.username}!`, 'success');
+    } catch (e2) {
+      er.textContent = e2.code === 404 ? 'Akun tidak ditemukan di server 🔍' : 'Server sibuk, coba lagi.';
+      er.hidden = false; sfx.illegal();
+    }
+    return;
+  }
+  const st = store.stats;
+  const before = st.likes || 0;
+  st.likes = mode === 'set' ? n : before + n;
+  saveStats(st);
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${t.username}: ${before} → ${st.likes} ❤️`);
+  renderAdminTarget();
+  renderAdminLog();
+  sfx.buy();
+  toast(mode === 'set' ? `Suka @${t.username} jadi ${st.likes}! 🎯` : `+${n} ❤️ untuk @${t.username}!`, 'success');
 }
 
 function adminLogout() {
@@ -1734,7 +1980,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
@@ -1754,6 +2000,8 @@ function init() {
   $('#adm-set').addEventListener('click', () => applyAdminStars('set'));
   $('#adm-add-coin').addEventListener('click', () => applyAdminCoins('add'));
   $('#adm-set-coin').addEventListener('click', () => applyAdminCoins('set'));
+  $('#adm-add-like').addEventListener('click', () => applyAdminLikes('add'));
+  $('#adm-set-like').addEventListener('click', () => applyAdminLikes('set'));
   $('#adm-logout').addEventListener('click', adminLogout);
   $('#profile-chip').addEventListener('click', (e) => {
     sfx.click();
@@ -1766,6 +2014,34 @@ function init() {
   $('#btn-shop').addEventListener('click', () => { sfx.click(); openShop(); });
   $('#btn-friends').addEventListener('click', () => { sfx.click(); openFriends(); });
   $('#fr-add').addEventListener('click', submitAddFriend);
+  $('#btn-inbox').addEventListener('click', () => { sfx.click(); openInbox(); });
+  $('#inbox-refresh').addEventListener('click', () => { sfx.click(); fetchInbox(); });
+  $('#inbox-list').addEventListener('click', async (e) => {
+    const add = e.target.closest('[data-inbox-add]');
+    const view = e.target.closest('[data-inbox-view]');
+    if (add) {
+      const [id, username] = add.dataset.inboxAdd.split('|');
+      const r = addFriend(username, id, currentProfile()?.id);
+      if (!r.ok) { toast(r.message, 'error'); sfx.illegal(); return; }
+      sfx.buy();
+      toast(`@${r.username} jadi temanmu! 👥`, 'success');
+      schedulePush();
+      fetchInbox();
+    } else if (view) {
+      try {
+        const { account } = await Server.find(view.dataset.inboxView);
+        openPlayerModal(rowFromAccount(account));
+      } catch { toast('Akun tidak ditemukan 🔍', 'error'); }
+    }
+  });
+  $('#lb-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.lb-row');
+    if (row && row.dataset.lbi !== undefined && lastLbRows[+row.dataset.lbi]) openPlayerModal(lastLbRows[+row.dataset.lbi]);
+  });
+  $('#recent-list').addEventListener('click', (e) => {
+    const it = e.target.closest('.recent-item');
+    if (it && it.dataset.ri !== undefined && lastRecent[+it.dataset.ri]) openMatchModal(lastRecent[+it.dataset.ri]);
+  });
   $('#fr-copy-user').addEventListener('click', async () => { sfx.click(); if (await copyText(currentProfile()?.username || '')) toast('Username disalin! 📋', 'success'); });
   $('#fr-copy-id').addEventListener('click', async () => { sfx.click(); if (await copyText(currentProfile()?.id || '')) toast('ID disalin! 📋', 'success'); });
   $('#friends-list').addEventListener('click', async (e) => {

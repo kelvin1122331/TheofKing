@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -285,6 +285,8 @@
       </div>
     </section>
   </main>
+
+  <button id="btn-inbox" class="inbox-fab" title="Pesan">💌<span class="count-badge" id="inbox-count" hidden>0</span></button>
 
   <footer class="footer">
     <div class="wrap footer-inner">
@@ -512,9 +514,43 @@
         <button class="btn btn-gold" id="adm-add-coin" type="button">➕ Tambah</button>
         <button class="btn btn-outline" id="adm-set-coin" type="button">🎯 Ubah Jadi</button>
       </div>
+      <div class="field-label">❤️ Kelola Suka</div>
+      <label class="field">Jumlah Suka
+        <input id="adm-amount-like" type="number" min="0" max="999999" placeholder="cth: 100" />
+      </label>
+      <div class="adm-btns">
+        <button class="btn btn-gold" id="adm-add-like" type="button">➕ Tambah</button>
+        <button class="btn btn-outline" id="adm-set-like" type="button">🎯 Ubah Jadi</button>
+      </div>
       <div class="field-label">🧾 Riwayat Sesi Ini</div>
       <div class="adm-log" id="adm-log"></div>
       <button class="btn btn-danger-ghost btn-block" id="adm-logout" type="button">🔒 Keluar Admin</button>
+    </div>
+  </div>
+
+  <!-- ============ INBOX ============ -->
+  <div class="modal-backdrop" id="modal-inbox" hidden style="display:none">
+    <div class="modal modal-scroll">
+      <button class="modal-x" data-close="modal-inbox">✕</button>
+      <h2>💌 Pesan <button class="btn btn-outline btn-sm" id="inbox-refresh" type="button" title="Muat ulang">🔄</button></h2>
+      <p class="muted">Teman, kabar update, event &amp; gift masuk ke sini.</p>
+      <div class="inbox-list" id="inbox-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PROFIL PEMAIN ============ -->
+  <div class="modal-backdrop" id="modal-player" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-player">✕</button>
+      <div id="player-body"></div>
+    </div>
+  </div>
+
+  <!-- ============ DETAIL MATCH ============ -->
+  <div class="modal-backdrop" id="modal-match" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-match">✕</button>
+      <div id="match-body"></div>
     </div>
   </div>
 
@@ -611,7 +647,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=16"></script>
-  <script type="module" src="js/app.js?v=16"></script>
+  <script src="js/vendor/peerjs.min.js?v=17"></script>
+  <script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>

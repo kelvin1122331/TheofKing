@@ -26,6 +26,12 @@ try {
 }
 if (!db.accounts) db.accounts = {};
 if (!db.adminTokens) db.adminTokens = {};
+for (const a of Object.values(db.accounts)) {
+  if (typeof a.likes !== 'number') a.likes = 0;
+  if (!Array.isArray(a.liked)) a.liked = [];
+  if (!Array.isArray(a.inbox)) a.inbox = [];
+}
+if (!db.feed) db.feed = [];
 let saveTimer = null;
 function saveSoon() {
   if (saveTimer) return;
@@ -78,6 +84,7 @@ function publicAccount(a) {
     },
     skin: (a.settings && a.settings.skin) || 'wood',
     avatarBorder: a.avatarBorder || null,
+    likes: a.likes || 0,
     rev: a.rev, updatedAt: a.updatedAt,
   };
 }
@@ -86,6 +93,7 @@ function ownerAccount(a) {
   pub.stats = { ...a.stats };
   pub.settings = a.settings;
   pub.friends = a.friends;
+  pub.liked = a.liked || [];
   return pub;
 }
 
@@ -190,7 +198,7 @@ app.get('/api/leaderboard', (req, res) => {
   const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 50));
   const all = Object.values(db.accounts).map((a) => ({
     id: a.id, name: a.name, username: a.username, avatar: a.avatar, country: a.country,
-    stars: a.stats.stars, streak: a.stats.streak, avatarBorder: a.avatarBorder || null,
+    stars: a.stats.stars, streak: a.stats.streak, likes: a.likes || 0, avatarBorder: a.avatarBorder || null,
   }));
   all.sort((x, y) => (y[by] - x[by]) || (y.stars - x.stars));
   const me = String(req.query.me || '').toUpperCase();
@@ -199,6 +207,61 @@ app.get('/api/leaderboard', (req, res) => {
     meRank: me ? all.findIndex((x) => x.id === me) + 1 || null : null,
     total: all.length,
   });
+});
+
+// ------------------------- pesan & suka -------------------------
+function norm(a) {
+  if (!a) return a;
+  if (typeof a.likes !== 'number') a.likes = 0;
+  if (!Array.isArray(a.liked)) a.liked = [];
+  if (!Array.isArray(a.inbox)) a.inbox = [];
+  return a;
+}
+const rid = () => crypto.randomBytes(8).toString('hex');
+function pushInbox(a, msg) {
+  norm(a);
+  a.inbox.unshift({ id: rid(), at: Date.now(), read: false, ...msg });
+  a.inbox = a.inbox.slice(0, 50);
+  saveSoon();
+}
+
+app.post('/api/notify/friend', (req, res) => {
+  const from = db.accounts[String((req.body && req.body.fromId) || '').toUpperCase()];
+  const to = db.accounts[String((req.body && req.body.toId) || '').toUpperCase()];
+  if (!from || !to) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  if (from.id === to.id) return res.status(400).json({ error: 'Tidak bisa ke diri sendiri.' });
+  pushInbox(to, { type: 'friend', title: '👥 Teman baru!', body: `@${from.username} menambahkanmu sebagai teman.`, data: { username: from.username, id: from.id } });
+  res.json({ ok: true });
+});
+
+app.get('/api/inbox/:id', (req, res) => {
+  const a = db.accounts[String(req.params.id).toUpperCase()];
+  if (!a || String(req.query.as || '').toUpperCase() !== a.id) return res.status(403).json({ error: 'Bukan milikmu.' });
+  norm(a);
+  res.json({ messages: a.inbox, feed: (db.feed || []).slice(0, 20) });
+});
+
+app.post('/api/inbox/:id/read', (req, res) => {
+  const a = db.accounts[String(req.params.id).toUpperCase()];
+  if (!a || String((req.body && req.body.as) || '').toUpperCase() !== a.id) return res.status(403).json({ error: 'Bukan milikmu.' });
+  const ids = new Set((req.body && req.body.ids) || []);
+  norm(a).inbox.forEach((m) => { if (ids.has(m.id)) m.read = true; });
+  saveSoon();
+  res.json({ ok: true });
+});
+
+app.post('/api/like', (req, res) => {
+  const from = db.accounts[String((req.body && req.body.fromId) || '').toUpperCase()];
+  const to = db.accounts[String((req.body && req.body.toId) || '').toUpperCase()];
+  if (!from || !to) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  if (from.id === to.id) return res.status(400).json({ error: 'Tidak bisa suka diri sendiri.' });
+  norm(from); norm(to);
+  if (from.liked.includes(to.id)) return res.status(409).json({ error: 'Sudah disuka.', likes: to.likes });
+  from.liked.push(to.id);
+  from.liked = from.liked.slice(-500);
+  to.likes += 1;
+  saveSoon();
+  res.json({ likes: to.likes });
 });
 
 // ------------------------- admin -------------------------
@@ -253,6 +316,62 @@ app.post('/api/admin/coins', needAdmin, (req, res) => {
   a.updatedAt = Date.now();
   saveSoon();
   res.json({ before, after: a.stats.coins, account: ownerAccount(a) });
+});
+app.post('/api/admin/broadcast', needAdmin, (req, res) => {
+  const title = String((req.body && req.body.title) || '').slice(0, 80);
+  const body = String((req.body && req.body.body) || '').slice(0, 500);
+  if (!title || !body) return res.status(400).json({ error: 'Judul + isi wajib.' });
+  db.feed.unshift({ id: rid(), kind: 'info', title, body, at: Date.now() });
+  db.feed = db.feed.slice(0, 30);
+  saveSoon();
+  res.json({ ok: true });
+});
+app.post('/api/admin/gift', needAdmin, (req, res) => {
+  const coins = Math.floor(Number(req.body && req.body.coins)) || 0;
+  const stars = Math.floor(Number(req.body && req.body.stars)) || 0;
+  if (coins < 0 || stars < 0 || coins > 999999 || stars > 99999 || (!coins && !stars)) {
+    return res.status(400).json({ error: 'Jumlah gift tidak valid.' });
+  }
+  const q = String((req.body && req.body.target) || '').replace(/^@/, '').toLowerCase();
+  const label = [stars ? `⭐ ${stars}` : '', coins ? `🪙 ${coins}` : ''].filter(Boolean).join(' + ');
+  if (q === 'all') {
+    for (const a of Object.values(db.accounts)) {
+      a.stats.stars += stars;
+      a.stats.coins += coins;
+      a.rev += 1;
+      a.updatedAt = Date.now();
+    }
+    db.feed.unshift({ id: rid(), kind: 'gift', title: '🎁 Gift dari Admin!', body: `Semua pemain dapat ${label}. Otomatis masuk ✅`, at: Date.now() });
+    db.feed = db.feed.slice(0, 30);
+    saveSoon();
+    return res.json({ ok: true, count: Object.keys(db.accounts).length });
+  }
+  const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  a.stats.stars += stars;
+  a.stats.coins += coins;
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  pushInbox(a, { type: 'gift', title: '🎁 Gift dari Admin!', body: `Kamu dapat ${label}. Otomatis masuk ✅` });
+  saveSoon();
+  res.json({ ok: true, account: ownerAccount(a) });
+});
+app.post('/api/admin/likes', needAdmin, (req, res) => {
+  const q = String((req.body && req.body.target) || '').replace(/^@/, '').toLowerCase();
+  const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  norm(a);
+  const n = Math.floor(Number(req.body && req.body.amount));
+  const mode = req.body && req.body.mode === 'set' ? 'set' : 'add';
+  if (!Number.isFinite(n) || n < (mode === 'set' ? 0 : 1) || n > 999999) {
+    return res.status(400).json({ error: 'Jumlah tidak valid.' });
+  }
+  const before = a.likes;
+  a.likes = mode === 'set' ? n : before + n;
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  saveSoon();
+  res.json({ before, after: a.likes, account: ownerAccount(a) });
 });
 
 // ------------------------- statik: file game -------------------------

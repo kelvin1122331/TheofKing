@@ -82,6 +82,12 @@ export const Server = {
     api('/api/admin/stars', { method: 'POST', token, body: { target, mode, amount } }),
   adminCoins: (token, target, mode, amount) =>
     api('/api/admin/coins', { method: 'POST', token, body: { target, mode, amount } }),
+  notify: (fromId, toId) => api('/api/notify/friend', { method: 'POST', body: { fromId, toId } }),
+  inbox: (id) => api('/api/inbox/' + encodeURIComponent(id) + '?as=' + encodeURIComponent(id)),
+  inboxRead: (id, ids) => api('/api/inbox/' + encodeURIComponent(id) + '/read', { method: 'POST', body: { as: id, ids } }),
+  like: (fromId, toId) => api('/api/like', { method: 'POST', body: { fromId, toId } }),
+  adminLikes: (token, target, mode, amount) =>
+    api('/api/admin/likes', { method: 'POST', token, body: { target, mode, amount } }),
 };
 
 export function openMatchSocket() {
