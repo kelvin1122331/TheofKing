@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=30';
-import { rankForStars, rankProgress } from './ranks.js?v=30';
-import { sfx } from './sound.js?v=30';
-import { flagFor } from './countries.js?v=30';
-import { borderImg, borderFx, avatarImg } from './cosmetics.js?v=30';
+import { avatarGradientFor, initialsFor } from './store.js?v=31';
+import { rankForStars, rankProgress } from './ranks.js?v=31';
+import { sfx } from './sound.js?v=31';
+import { flagFor } from './countries.js?v=31';
+import { borderImg, borderFx, avatarImg } from './cosmetics.js?v=31';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -136,12 +136,22 @@ export function borderOverlayHTML(borderId) {
   return `<span class="ava-frame"><img src="${src}" alt=""${fx ? ` class="${fx}"` : ''} /></span>`;
 }
 
+/** Lencana verified + gelar owner/admin di belakang nama. */
+export function badgesHTML(p = {}) {
+  let out = '';
+  if (p && p.verified) out += ' <span class="badge-verified" title="Akun terverifikasi">✔</span>';
+  if (p && p.title === 'owner') out += ' <span class="badge-title badge-owner">👑 OWNER</span>';
+  else if (p && p.title === 'admin') out += ' <span class="badge-title badge-admin">🛡️ ADMIN</span>';
+  return out;
+}
+
 /** Nama pemain; efek rainbow bila fx diset. Bendera/emoji di luar span agar tak transparan. */
-export function nickHTML(name, fx) {
+export function nickHTML(name, fx, prof) {
   const t = esc(name || '\u2013');
-  if (fx === 'rainbow') return `<span class="nick-rainbow">${t}</span>`;
-  if (fx === 'inferno') return `<span class="nick-inferno">${t}</span>`;
-  return t;
+  const b = badgesHTML(prof);
+  if (fx === 'rainbow') return `<span class="nick-rainbow">${t}</span>${b}`;
+  if (fx === 'inferno') return `<span class="nick-inferno">${t}</span>${b}`;
+  return t + b;
 }
 
 let rankupTimer = null;
@@ -195,8 +205,8 @@ const VS_MS = 2800; // sinkron dengan animasi .vs-bar di CSS
  * @param {object} o { me, opp, meSub, oppSub, modeLabel, sub }
  */
 function vsName(p, fallback) {
-  const nm = (p && p.name) || fallback;
   const fl = flagFor(p);
+  const nm = nickHTML((p && p.name) || fallback, p && p.nickFx, p);
   return fl ? `${fl} ${nm}` : nm;
 }
 
@@ -206,10 +216,10 @@ export function showVsSplash(o = {}) {
     if (!ov) { resolve(); return; }
     document.getElementById('vs-mode').textContent = o.modeLabel || 'Pertandingan';
     document.getElementById('vs-me-avatar').innerHTML = avatarHTML(o.me, 84);
-    document.getElementById('vs-me-name').textContent = vsName(o.me, 'Kamu');
+    document.getElementById('vs-me-name').innerHTML = vsName(o.me, 'Kamu');
     document.getElementById('vs-me-rank').innerHTML = o.meSub || '';
     document.getElementById('vs-opp-avatar').innerHTML = avatarHTML(o.opp, 84);
-    document.getElementById('vs-opp-name').textContent = vsName(o.opp, 'Lawan');
+    document.getElementById('vs-opp-name').innerHTML = vsName(o.opp, 'Lawan');
     document.getElementById('vs-opp-rank').innerHTML = o.oppSub || '';
     document.getElementById('vs-sub').textContent = o.sub || '';
     const setStreak = (id, n) => {

@@ -2,19 +2,19 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=30';
-import { Board } from './board.js?v=30';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=30';
-import { sfx } from './sound.js?v=30';
-import { store, saveStats, pushRecent } from './store.js?v=30';
-import { applyResult, rankForStars } from './ranks.js?v=30';
+import { Chess } from './vendor/chess.js?v=31';
+import { Board } from './board.js?v=31';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=31';
+import { sfx } from './sound.js?v=31';
+import { store, saveStats, pushRecent } from './store.js?v=31';
+import { applyResult, rankForStars } from './ranks.js?v=31';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
-  confettiBurst, esc, confirmDialog, showRankUp, hideRankUp,
-} from './ui.js?v=30';
-import { pieceSrc } from './pieces.js?v=30';
-import { flagFor } from './countries.js?v=30';
-import { applySkin, skinById } from './skins.js?v=30';
+  confettiBurst, esc, confirmDialog, showRankUp, hideRankUp, badgesHTML,
+} from './ui.js?v=31';
+import { pieceSrc } from './pieces.js?v=31';
+import { flagFor } from './countries.js?v=31';
+import { applySkin, skinById } from './skins.js?v=31';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -450,7 +450,7 @@ export class Game {
       el.innerHTML = `
         ${avatarHTML(prof, 42)}
         <div class="pmeta">
-          <div class="pname"><span class="color-dot ${color}"></span><span>${flagFor(prof) ? flagFor(prof) + ' ' : ''}${esc(prof.name)}${isMe && this.cfg.mode !== 'local' ? ' (Kamu)' : ''}</span></div>
+          <div class="pname"><span class="color-dot ${color}"></span><span>${flagFor(prof) ? flagFor(prof) + ' ' : ''}${esc(prof.name)}${badgesHTML(prof)}${isMe && this.cfg.mode !== 'local' ? ' (Kamu)' : ''}</span></div>
           <div class="psub">
             ${rank ? `<span>${rank.icon} ${rank.name}</span>` : `<span>@${esc(prof.username || 'lawan')}</span>`}
             ${stars != null ? `<span>⭐ ${stars}</span>` : ''}

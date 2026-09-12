@@ -62,6 +62,8 @@ Alamat tersimpan otomatis di HP pemain.
 - `POST /api/admin/login` — `{user, pass}` → token
 - `GET /api/admin/find?q=` + `POST /api/admin/stars` — butuh header `X-Admin-Token`
 - `POST /api/admin/coins` — kelola koin `{target, mode, amount}` (butuh token)
+- `POST /api/admin/verified` — centang verified `{target, value}` (butuh token)
+- `POST /api/admin/title` — gelar `{target, title: owner|admin|none}` (butuh token)
 - `POST /api/notify/friend` — notifikasi tambah teman `{fromId, toId}`
 - `GET /api/inbox/:id?as=:id` — pesan pribadi + kabar global
 - `POST /api/inbox/:id/read` — tandai dibaca `{as, ids}`

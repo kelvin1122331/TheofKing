@@ -89,6 +89,10 @@ export const Server = {
   like: (fromId, toId) => api('/api/like', { method: 'POST', body: { fromId, toId } }),
   adminLikes: (token, target, mode, amount) =>
     api('/api/admin/likes', { method: 'POST', token, body: { target, mode, amount } }),
+  adminVerified: (token, target, value) =>
+    api('/api/admin/verified', { method: 'POST', token, body: { target, value } }),
+  adminTitle: (token, target, title) =>
+    api('/api/admin/title', { method: 'POST', token, body: { target, title } }),
 };
 
 export function openMatchSocket() {

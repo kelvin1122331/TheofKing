@@ -30,6 +30,8 @@ for (const a of Object.values(db.accounts)) {
   if (typeof a.likes !== 'number') a.likes = 0;
   if (!Array.isArray(a.liked)) a.liked = [];
   if (!Array.isArray(a.inbox)) a.inbox = [];
+  if (typeof a.verified !== 'boolean') a.verified = false;
+  if (!['owner', 'admin'].includes(a.title)) a.title = '';
 }
 if (!db.feed) db.feed = [];
 let saveTimer = null;
@@ -87,6 +89,8 @@ function publicAccount(a) {
     avatarBorder: a.avatarBorder || null,
     nickFx: a.nickFx || 'none',
     likes: a.likes || 0,
+    verified: !!a.verified,
+    title: a.title || '',
     rev: a.rev, updatedAt: a.updatedAt,
   };
 }
@@ -239,6 +243,8 @@ function norm(a) {
   if (typeof a.likes !== 'number') a.likes = 0;
   if (!Array.isArray(a.liked)) a.liked = [];
   if (!Array.isArray(a.inbox)) a.inbox = [];
+  if (typeof a.verified !== 'boolean') a.verified = false;
+  if (!['owner', 'admin'].includes(a.title)) a.title = '';
   return a;
 }
 const rid = () => crypto.randomBytes(8).toString('hex');
@@ -340,6 +346,37 @@ app.post('/api/admin/coins', needAdmin, (req, res) => {
   a.updatedAt = Date.now();
   saveSoon();
   res.json({ before, after: a.stats.coins, account: ownerAccount(a) });
+});
+app.post('/api/admin/verified', needAdmin, (req, res) => {
+  const q = String((req.body && req.body.target) || '').replace(/^@/, '').toLowerCase();
+  const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  const v = req.body && req.body.value;
+  if (v !== true && v !== false && v !== 'true' && v !== 'false' && v !== 1 && v !== 0) {
+    return res.status(400).json({ error: 'value harus true/false.' });
+  }
+  const before = !!a.verified;
+  a.verified = (v === true || v === 'true' || v === 1);
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  saveSoon();
+  res.json({ before, after: a.verified, account: ownerAccount(a) });
+});
+app.post('/api/admin/title', needAdmin, (req, res) => {
+  const q = String((req.body && req.body.target) || '').replace(/^@/, '').toLowerCase();
+  const a = Object.values(db.accounts).find((x) => x.id.toLowerCase() === q || x.username.toLowerCase() === q);
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  let t = String((req.body && req.body.title) || '').toLowerCase();
+  if (t === 'none' || t === 'hapus' || t === '-') t = '';
+  if (t !== '' && t !== 'owner' && t !== 'admin') {
+    return res.status(400).json({ error: 'Gelar harus owner/admin/none.' });
+  }
+  const before = a.title || '';
+  a.title = t;
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  saveSoon();
+  res.json({ before, after: a.title, account: ownerAccount(a) });
 });
 app.post('/api/admin/broadcast', needAdmin, (req, res) => {
   const title = String((req.body && req.body.title) || '').slice(0, 80);

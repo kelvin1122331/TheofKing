@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=30';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=30';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=30';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=30';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=30';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=30';
-import { Game } from './game.js?v=30';
-import { preloadPieces } from './pieces.js?v=30';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=30';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=30';
-import { SKINS, skinById, applySkin } from './skins.js?v=30';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=30';
+import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=31';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=31';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=31';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=31';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=31';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=31';
+import { Game } from './game.js?v=31';
+import { preloadPieces } from './pieces.js?v=31';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=31';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=31';
+import { SKINS, skinById, applySkin } from './skins.js?v=31';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=31';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -101,7 +101,7 @@ function renderChip() {
   if (!p) { chip.innerHTML = '👤 Masuk'; updateFriendsBadge(); return; }
   const r = rankForStars(store.stats.stars);
   chip.innerHTML = `${avatarHTML(p, 32)}
-    <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${nickHTML(p.name, p.nickFx)}</span>
+    <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${nickHTML(p.name, p.nickFx, p)}</span>
     <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span>
     <span class="pcoins" title="Koin — klik untuk buka Shop">🪙 <b id="coin-balance">${store.stats.coins || 0}</b></span></span>`;
   updateFriendsBadge();
@@ -419,7 +419,7 @@ function paintLeaderboard(rows, meRank) {
     <div class="lb-row ${r.me ? 'me' : ''}" data-lbi="${i}" style="cursor:pointer" title="Lihat profil">
       <span class="pos">${medal(r.pos)}</span>
       ${avatarHTML(r, 40)}
-      <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${nickHTML(r.name, r.nickFx)}${r.me ? ' (Kamu)' : ''}</span><br>
+      <span class="who"><span class="n">${flagFor(r) ? flagFor(r) + ' ' : ''}${nickHTML(r.name, r.nickFx, r)}${r.me ? ' (Kamu)' : ''}</span><br>
       <span class="u">@${esc(r.username)} • ${r.rank.icon} ${r.rank.name}</span></span>
       <span class="score">${lbTab === 'stars' ? '⭐ ' + r.stars : '🔥 ' + r.streak}</span>
       <span class="lb-likes">❤️ ${r.likes || 0}</span>
@@ -657,7 +657,7 @@ async function pullAccount() {
 }
 
 function applyServerAccount(a) {
-  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, nickFx: a.nickFx || 'none', createdAt: store.profile?.createdAt || Date.now() };
+  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, nickFx: a.nickFx || 'none', verified: !!a.verified, title: a.title || '', createdAt: store.profile?.createdAt || Date.now() };
   store.stats = { ...a.stats, _rev: a.rev || 0 };
   const s = store.settings;
   if (a.settings?.skin) s.skin = a.settings.skin;
@@ -1159,7 +1159,7 @@ function renderLobby() {
 function lobbyCardHTML(entry, tag) {
   const r = rankForStars(entry.stats?.stars || 0);
   return `${avatarHTML(entry.profile, 54)}
-    <span class="lname">${flagFor(entry.profile) ? flagFor(entry.profile) + " " : ""}${esc(entry.profile.name)}</span>
+    <span class="lname">${flagFor(entry.profile) ? flagFor(entry.profile) + " " : ""}${nickHTML(entry.profile.name, entry.profile.nickFx, entry.profile)}</span>
     <span class="lrank">${r.icon} ${r.name} • ⭐ ${entry.stats?.stars || 0} • 🔥 ${entry.stats?.streak || 0}</span>
     <span class="mode-tag ${tag === 'HOST' ? 'on' : 'off'}">${tag}</span>`;
 }
@@ -1455,7 +1455,7 @@ function openPlayerModal(row) {
   document.getElementById('player-body').innerHTML = `
     <div class="pm-wrap">
       <div class="pm-face">${avatarHTML(row, 76)}</div>
-      <h2 class="pm-name">${nickHTML(row.name, row.nickFx)}</h2>
+      <h2 class="pm-name">${nickHTML(row.name, row.nickFx, row)}</h2>
       <div class="pm-sub">${row.username ? '@' + esc(row.username) + ' • ' : ''}${esc(row.id || '')}${isMe ? ' • <b>Ini kamu</b>' : ''}${row.bot ? ' • 🤖 Bot' : ''}</div>
       <div class="pm-rank">${rk.icon} ${esc(rk.name)}</div>
       <div class="pm-grid">
@@ -1509,7 +1509,7 @@ function openMatchModal(r) {
     return `<div class="mm-side">
       <div class="mm-tag">${tag}</div>
       <div class="mm-face">${avatarHTML(p, 60)}</div>
-      <div class="mm-name">${nickHTML(p.name, p.nickFx)}</div>
+      <div class="mm-name">${nickHTML(p.name, p.nickFx, p)}</div>
       <div class="mm-sub">${p.country ? esc(flagEmoji(p.country) + ' ' + (cc ? cc.name : p.country)) : '–'}</div>
       <div class="mm-stats">⭐ ${p.stars == null ? '–' : p.stars} &nbsp; ❤️ ${p.likes == null ? '–' : p.likes}</div>
     </div>`;
@@ -1668,7 +1668,7 @@ async function resolveAdminTargetAsync() {
   if (isServerOnline() && adminToken) {
     try {
       const { account } = await Server.adminFind(adminToken, q);
-      return { server: true, name: account.name, username: account.username, id: account.id, stars: account.stats.stars, coins: account.stats.coins || 0 };
+      return { server: true, name: account.name, username: account.username, id: account.id, stars: account.stats.stars, coins: account.stats.coins || 0, verified: !!account.verified, title: account.title || '' };
     } catch { return null; }
   }
   return resolveAdminTarget();
@@ -1683,7 +1683,10 @@ async function renderAdminTarget() {
   const t = await resolveAdminTargetAsync();
   if (seq !== admTargetSeq || document.getElementById('adm-target').value.trim() !== q) return;
   if (t) {
-    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})${t.server ? ' 🌐' : ''}<br>⭐ saat ini: <b>${t.server ? t.stars : (store.stats.stars || 0)}</b> • 🪙: <b>${t.server ? t.coins : (store.stats.coins || 0)}</b>`;
+    const v = t.server ? t.verified : !!store.profile?.verified;
+    const tt = t.server ? t.title : (store.profile?.title || '');
+    const tLabel = tt === 'owner' ? '👑 OWNER' : tt === 'admin' ? '🛡️ ADMIN' : '–';
+    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})${t.server ? ' 🌐' : ''}<br>⭐ saat ini: <b>${t.server ? t.stars : (store.stats.stars || 0)}</b> • 🪙: <b>${t.server ? t.coins : (store.stats.coins || 0)}</b><br>✔️ Verified: <b>${v ? 'AKTIF ✅' : 'mati ❌'}</b> • 🎖️ Gelar: <b>${tLabel}</b>`;
   } else {
     box.innerHTML = hint;
   }
@@ -1810,6 +1813,67 @@ async function applyAdminLikes(mode) {
   renderAdminLog();
   sfx.buy();
   toast(mode === 'set' ? `Suka @${t.username} jadi ${st.likes}! 🎯` : `+${n} ❤️ untuk @${t.username}!`, 'success');
+}
+
+async function applyAdminVerified(value) {
+  const t = await resolveAdminTargetAsync();
+  const er = document.getElementById('adm-error2');
+  const scope = (isServerOnline() && adminToken) ? 'di server' : 'di perangkat ini';
+  if (!t) { er.textContent = `Akun tidak ditemukan ${scope} 🔍`; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  if (t.server && adminToken) {
+    try {
+      const r = await Server.adminVerified(adminToken, document.getElementById('adm-target').value.trim(), value);
+      adminLog.unshift(`✔️ @${r.account.username}: verified ${r.before ? 'ON' : 'OFF'} → ${r.after ? 'ON' : 'OFF'} 🌐`);
+      if (r.account.id === currentProfile()?.id) pullAccount();
+      renderAdminTarget();
+      renderAdminLog();
+      sfx.buy();
+      toast(value ? `✔️ @${r.account.username} terverifikasi!` : `Verified @${r.account.username} dimatikan.`, 'success');
+    } catch (e2) {
+      er.textContent = e2.code === 404 ? 'Akun tidak ditemukan di server 🔍' : 'Server sibuk, coba lagi.';
+      er.hidden = false; sfx.illegal();
+    }
+    return;
+  }
+  store.profile = { ...store.profile, verified: !!value };
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  adminLog.unshift(`✔️ @${t.username}: verified ${value ? 'ON ✅' : 'OFF ❌'}`);
+  renderAdminTarget();
+  renderAdminLog();
+  sfx.buy();
+  toast(value ? `✔️ @${t.username} terverifikasi!` : `Verified @${t.username} dimatikan.`, 'success');
+}
+
+async function applyAdminTitle(title) {
+  const t = await resolveAdminTargetAsync();
+  const er = document.getElementById('adm-error2');
+  const scope = (isServerOnline() && adminToken) ? 'di server' : 'di perangkat ini';
+  if (!t) { er.textContent = `Akun tidak ditemukan ${scope} 🔍`; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  const label = title === 'owner' ? '👑 OWNER' : title === 'admin' ? '🛡️ ADMIN' : 'tanpa gelar';
+  if (t.server && adminToken) {
+    try {
+      const r = await Server.adminTitle(adminToken, document.getElementById('adm-target').value.trim(), title || 'none');
+      adminLog.unshift(`🎖️ @${r.account.username}: gelar → ${label} 🌐`);
+      if (r.account.id === currentProfile()?.id) pullAccount();
+      renderAdminTarget();
+      renderAdminLog();
+      sfx.buy();
+      toast(`Gelar @${r.account.username}: ${label}! 🎖️`, 'success');
+    } catch (e2) {
+      er.textContent = e2.code === 404 ? 'Akun tidak ditemukan di server 🔍' : 'Server sibuk, coba lagi.';
+      er.hidden = false; sfx.illegal();
+    }
+    return;
+  }
+  store.profile = { ...store.profile, title: title || '' };
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  adminLog.unshift(`🎖️ @${t.username}: gelar → ${label}`);
+  renderAdminTarget();
+  renderAdminLog();
+  sfx.buy();
+  toast(`Gelar @${t.username}: ${label}! 🎖️`, 'success');
 }
 
 // ------------------------- cheat admin -------------------------
@@ -2593,6 +2657,11 @@ function init() {
   $('#adm-set-coin').addEventListener('click', () => applyAdminCoins('set'));
   $('#adm-add-like').addEventListener('click', () => applyAdminLikes('add'));
   $('#adm-set-like').addEventListener('click', () => applyAdminLikes('set'));
+  $('#adm-verified-on').addEventListener('click', () => applyAdminVerified(true));
+  $('#adm-verified-off').addEventListener('click', () => applyAdminVerified(false));
+  $('#adm-title-owner').addEventListener('click', () => applyAdminTitle('owner'));
+  $('#adm-title-admin').addEventListener('click', () => applyAdminTitle('admin'));
+  $('#adm-title-none').addEventListener('click', () => applyAdminTitle(''));
   $('#adm-logout').addEventListener('click', adminLogout);
   $('#adm-cheat-toggle').addEventListener('click', () => {
     sfx.click();
