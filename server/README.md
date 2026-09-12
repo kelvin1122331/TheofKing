@@ -24,6 +24,11 @@ di footer).
 | `DATA_FILE`  | `./data.json`      | File database JSON                |
 | `ADMIN_USER` | `theoid`    | User admin panel                  |
 | `ADMIN_PASS` | `theo5757`     | Sandi admin panel                 |
+| `SMTP_HOST`  | –                  | Host SMTP (cth: `smtp.gmail.com`) |
+| `SMTP_PORT`  | `587`              | Port SMTP                         |
+| `SMTP_USER`  | –                  | User/email SMTP                   |
+| `SMTP_PASS`  | –                  | Sandi / App Password SMTP         |
+| `SMTP_FROM`  | = SMTP_USER        | Alamat pengirim email             |
 
 Contoh: `PORT=8080 ADMIN_PASS=sandi-baru npm start`
 
@@ -58,6 +63,11 @@ Alamat tersimpan otomatis di HP pemain.
 - `PUT /api/account/:id` — simpan `{profile, stats, settings, friends, rev}`
 - `GET /api/account/find?q=` — cari akun (publik)
 - `GET /api/account/check?username=&name=&except=` — cek nama/username dipakai (`{usernameTaken, nameTaken}`)
+- `POST /api/account/secure` — pasang email+sandi `{id, email, password}`
+- `POST /api/account/login` — masuk `{login, password}` (username/email)
+- `POST /api/account/password` — ganti sandi `{id, oldPassword, newPassword}`
+- `POST /api/account/reset/request` — kirim kode reset `{login}` (selalu ok)
+- `POST /api/account/reset/confirm` — reset `{login, code, newPassword}` → langsung login
 - `GET /api/leaderboard?by=stars|streak&me=:id` — peringkat global
 - `POST /api/admin/login` — `{user, pass}` → token
 - `GET /api/admin/find?q=` + `POST /api/admin/stars` — butuh header `X-Admin-Token`
@@ -73,6 +83,22 @@ Alamat tersimpan otomatis di HP pemain.
 - `POST /api/admin/likes` — kelola suka `{target, mode, amount}` (butuh token)
 - `WS /ws` — antre arena: kirim `{t:'queue', id, rank, profile, stats}`,
   terima `{t:'matched', role, code, opp}` lalu sambung P2P seperti biasa.
+
+## Email reset via Gmail (gratis)
+
+1. Di akun Gmail pengirim: aktifkan **verifikasi 2 langkah**
+   (`myaccount.google.com` → Keamanan → Verifikasi 2 langkah).
+2. Buat **Sandi aplikasi**: Keamanan → Sandi aplikasi → beri nama
+   `TheofKing` → salin 16 huruf yang muncul (tanpa spasi).
+3. Jalankan server dengan env:
+   ```bash
+   SMTP_HOST=smtp.gmail.com SMTP_PORT=587 \
+   SMTP_USER=emailkamu@gmail.com SMTP_PASS=xxxxxxxxxxxxxxxx \
+   npm start
+   ```
+   (Di Railway/Render/VPS: isi variabel yang sama di pengaturan env.)
+4. Tanpa SMTP, endpoint reset tetap jalan tapi `sent:false` dan kode
+   dicatat di log server (untuk tes / dibantu admin).
 
 ## Batasan yang perlu tahu
 

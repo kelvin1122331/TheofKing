@@ -2,6 +2,7 @@
 // TheofKing Server: akun global, leaderboard, admin, matchmaking arena.
 // Jalankan: npm install && npm start  (atau: node index.js)
 // Env: PORT (3000), DATA_FILE (./data.json), ADMIN_USER, ADMIN_PASS
+// Env email reset: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS, SMTP_FROM
 // Catatan: DB JSON file — cocok untuk skala kecil/menengah satu instance.
 // ============================================================
 const path = require('path');
@@ -10,6 +11,8 @@ const http = require('http');
 const crypto = require('crypto');
 const express = require('express');
 const { WebSocketServer } = require('ws');
+let nodemailer = null;
+try { nodemailer = require('nodemailer'); } catch { /* email nonaktif bila tak terinstal */ }
 
 const PORT = Number(process.env.PORT || 3000);
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
@@ -32,7 +35,10 @@ for (const a of Object.values(db.accounts)) {
   if (!Array.isArray(a.inbox)) a.inbox = [];
   if (typeof a.verified !== 'boolean') a.verified = false;
   if (!['owner', 'admin'].includes(a.title)) a.title = '';
+  if (typeof a.email !== 'string') a.email = '';
+  if (typeof a.passHash !== 'string') a.passHash = '';
 }
+if (!db.resets) db.resets = {};
 if (!db.feed) db.feed = [];
 let saveTimer = null;
 function saveSoon() {
@@ -100,6 +106,8 @@ function ownerAccount(a) {
   pub.settings = a.settings;
   pub.friends = a.friends;
   pub.liked = a.liked || [];
+  pub.email = a.email || '';
+  pub.hasPassword = !!a.passHash;
   return pub;
 }
 
@@ -218,6 +226,172 @@ app.put('/api/account/:id', (req, res) => {
   a.rev = rev;
   a.updatedAt = Date.now();
   saveSoon();
+  res.json({ account: ownerAccount(a) });
+});
+
+// ------------------------- auth: sandi, email, reset -------------------------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function hashPass(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const h = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  return salt + ':' + h;
+}
+function verifyPass(pw, stored) {
+  try {
+    const [salt, h] = String(stored || '').split(':');
+    if (!salt || !h) return false;
+    const h2 = crypto.scryptSync(String(pw), salt, 64);
+    return crypto.timingSafeEqual(Buffer.from(h, 'hex'), h2);
+  } catch { return false; }
+}
+function findLogin(q) {
+  const s = String(q || '').replace(/^@/, '').trim().toLowerCase();
+  if (!s) return null;
+  return Object.values(db.accounts).find((x) => (x.username || '').toLowerCase() === s || (x.email || '').toLowerCase() === s) || null;
+}
+function touchAccount(a) {
+  a.rev += 1;
+  a.updatedAt = Date.now();
+  saveSoon();
+}
+function maskEmail(e) {
+  const [u, d] = String(e || '').split('@');
+  if (!u || !d) return '';
+  return u.slice(0, 1) + '***@' + d;
+}
+// batas login: 10x gagal per 5 menit per IP+login
+const loginFails = new Map();
+function loginBlocked(key) {
+  const e = loginFails.get(key);
+  if (!e) return false;
+  if (Date.now() > e.until) { loginFails.delete(key); return false; }
+  return e.n >= 10;
+}
+function loginFail(key) {
+  const e = loginFails.get(key) || { n: 0, until: Date.now() + 5 * 60 * 1000 };
+  e.n += 1;
+  loginFails.set(key, e);
+}
+function smtpReady() {
+  return !!(nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+let mailer = null;
+function getMailer() {
+  if (mailer) return mailer;
+  const port = Number(process.env.SMTP_PORT || 587);
+  mailer = nodemailer.createTransport({
+    host: process.env.SMTP_HOST, port, secure: port === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+  return mailer;
+}
+async function sendResetEmail(to, name, code) {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  await getMailer().sendMail({
+    from: `"TheofKing 👑" <${from}>`,
+    to,
+    subject: 'Kode Reset Sandi TheofKing 🔑',
+    text: `Halo ${name}! Kode reset sandi TheofKing kamu: ${code} (berlaku 10 menit). Abaikan email ini jika kamu tidak memintanya.`,
+    html: `<div style="font-family:sans-serif;max-width:420px"><h2>👑 Reset Sandi TheofKing</h2><p>Halo <b>${name}</b>! Kode reset sandimu:</p><p style="font-size:2rem;letter-spacing:0.5rem;font-weight:900">🪙 ${code} 🪙</p><p>Berlaku <b>10 menit</b>. Abaikan email ini jika kamu tidak memintanya.</p></div>`,
+  });
+}
+
+/** Pasang email + sandi ke akun (Amankan Akun). */
+app.post('/api/account/secure', (req, res) => {
+  const b = req.body || {};
+  const a = db.accounts[String(b.id || '').toUpperCase()];
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  const email = String(b.email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Email tidak valid.' });
+  if (typeof b.password !== 'string' || b.password.length < 4) {
+    return res.status(400).json({ error: 'Sandi minimal 4 karakter.' });
+  }
+  const clash = Object.values(db.accounts).find((x) => x.id !== a.id && (x.email || '').toLowerCase() === email);
+  if (clash) return res.status(409).json({ error: 'Email sudah dipakai akun lain.' });
+  if (a.passHash) return res.status(403).json({ error: 'Akun sudah diamankan. Gunakan ganti sandi / reset.' });
+  a.email = email;
+  a.passHash = hashPass(b.password);
+  touchAccount(a);
+  res.json({ account: ownerAccount(a) });
+});
+
+/** Masuk dengan username/email + sandi. */
+app.post('/api/account/login', (req, res) => {
+  const b = req.body || {};
+  const key = (req.ip || '') + ':' + String(b.login || '').toLowerCase();
+  if (loginBlocked(key)) return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi 5 menit.' });
+  const a = findLogin(b.login);
+  if (!a || !a.passHash || !verifyPass(b.password || '', a.passHash)) {
+    loginFail(key);
+    return res.status(401).json({ error: 'Username/email atau sandi salah.' });
+  }
+  loginFails.delete(key);
+  res.json({ account: ownerAccount(a) });
+});
+
+/** Ganti sandi (butuh sandi lama). */
+app.post('/api/account/password', (req, res) => {
+  const b = req.body || {};
+  const a = db.accounts[String(b.id || '').toUpperCase()];
+  if (!a) return res.status(404).json({ error: 'Akun tidak ditemukan.' });
+  if (!a.passHash) return res.status(400).json({ error: 'Akun belum punya sandi. Amankan akun dulu.' });
+  if (!verifyPass(b.oldPassword || '', a.passHash)) {
+    return res.status(401).json({ error: 'Sandi lama salah.' });
+  }
+  if (typeof b.newPassword !== 'string' || b.newPassword.length < 4) {
+    return res.status(400).json({ error: 'Sandi baru minimal 4 karakter.' });
+  }
+  a.passHash = hashPass(b.newPassword);
+  touchAccount(a);
+  res.json({ ok: true });
+});
+
+/** Minta kode reset ke email. Selalu ok (anti-tebak akun). */
+app.post('/api/account/reset/request', async (req, res) => {
+  const b = req.body || {};
+  const a = findLogin(b.login);
+  if (!a || !a.email) return res.json({ ok: true, sent: false, email: null });
+  const code = String(crypto.randomInt(100000, 999999));
+  db.resets[a.id] = { code, exp: Date.now() + 10 * 60 * 1000, tries: 0 };
+  saveSoon();
+  if (!smtpReady()) {
+    console.log(`[reset] ${a.email} kode: ${code} (SMTP belum dikonfigurasi)`);
+    return res.json({ ok: true, sent: false, email: maskEmail(a.email) });
+  }
+  try {
+    await sendResetEmail(a.email, a.name || a.username, code);
+    res.json({ ok: true, sent: true, email: maskEmail(a.email) });
+  } catch (e) {
+    console.error('[reset] kirim email gagal:', e.message, '| kode:', code);
+    res.json({ ok: true, sent: false, email: maskEmail(a.email) });
+  }
+});
+
+/** Verifikasi kode + sandi baru (langsung login). */
+app.post('/api/account/reset/confirm', (req, res) => {
+  const b = req.body || {};
+  if (typeof b.newPassword !== 'string' || b.newPassword.length < 4) {
+    return res.status(400).json({ error: 'Sandi baru minimal 4 karakter.' });
+  }
+  const a = findLogin(b.login);
+  const r = a && db.resets[a.id];
+  if (!a || !r || Date.now() > r.exp) {
+    if (a) delete db.resets[a.id];
+    return res.status(400).json({ error: 'Kode salah atau kedaluwarsa.' });
+  }
+  if (r.tries >= 5) {
+    delete db.resets[a.id];
+    saveSoon();
+    return res.status(400).json({ error: 'Terlalu banyak percobaan. Minta kode baru.' });
+  }
+  if (String(b.code || '').trim() !== r.code) {
+    r.tries += 1;
+    saveSoon();
+    return res.status(400).json({ error: 'Kode salah. Coba lagi.' });
+  }
+  a.passHash = hashPass(b.newPassword);
+  delete db.resets[a.id];
+  touchAccount(a);
   res.json({ account: ownerAccount(a) });
 });
 

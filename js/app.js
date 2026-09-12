@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=33';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=33';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=33';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst, openEmotePicker } from './ui.js?v=33';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=33';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=33';
-import { Game } from './game.js?v=33';
-import { preloadPieces } from './pieces.js?v=33';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=33';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=33';
-import { SKINS, skinById, applySkin } from './skins.js?v=33';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=33';
+import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=34';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=34';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=34';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst, openEmotePicker } from './ui.js?v=34';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=34';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=34';
+import { Game } from './game.js?v=34';
+import { preloadPieces } from './pieces.js?v=34';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=34';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=34';
+import { SKINS, skinById, applySkin } from './skins.js?v=34';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=34';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -311,6 +311,7 @@ function initOnboarding() {
     refreshStats();
     linkAccount();
   });
+  $('#ob-goto-login').addEventListener('click', () => { sfx.click(); openAccountLogin(); });
 }
 
 function openProfileModal() {
@@ -333,9 +334,172 @@ function openProfileModal() {
     `<span class="chip">${r.icon} ${r.name}</span><span class="chip">⭐ ${st.stars}</span>` +
     `<span class="chip">🔥 ${st.streak} (terbaik ${st.bestStreak})</span>` +
     `<span class="chip">🏆 ${st.wins} 🤝 ${st.draws} 💔 ${st.losses}</span>`;
+  renderSecureSection();
   openModal('modal-profile');
 }
 
+function secureError(msg) {
+  const er = document.getElementById('pf-secure-error');
+  if (!msg) { er.hidden = true; return; }
+  er.textContent = msg;
+  er.hidden = false;
+}
+
+/** Seksi Amankan Akun: pasang email+sandi, atau ganti sandi bila sudah ada. */
+function renderSecureSection() {
+  const box = document.getElementById('pf-secure');
+  secureError(null);
+  if (!isServerOnline()) {
+    box.innerHTML = '<p class="muted small">📴 Butuh server online \uD83C\uDF10 untuk mengamankan akun.</p>';
+    return;
+  }
+  const p = currentProfile();
+  if (p && p.email) {
+    box.innerHTML = `<p class="muted small">📧 Email: <b>${esc(p.email)}</b> ✅ akun sudah aman.</p>
+      <label class="field">Sandi Lama
+        <input id="pf-pass-old" type="password" maxlength="64" placeholder="••••••" autocomplete="current-password" />
+      </label>
+      <label class="field">Sandi Baru
+        <input id="pf-pass-new" type="password" maxlength="64" placeholder="minimal 4 karakter" autocomplete="new-password" />
+      </label>
+      <button class="btn btn-outline btn-block" id="pf-pass-submit" type="button">🔑 Ganti Sandi</button>`;
+    document.getElementById('pf-pass-submit').addEventListener('click', submitChangePassword);
+  } else {
+    box.innerHTML = `<p class="muted small">Pasang email + sandi agar bisa masuk di HP lain & reset bila lupa.</p>
+      <label class="field">Email
+        <input id="pf-secure-email" maxlength="60" placeholder="cth: kamu@gmail.com" autocomplete="email" />
+      </label>
+      <label class="field">Sandi Baru
+        <input id="pf-secure-pass" type="password" maxlength="64" placeholder="minimal 4 karakter" autocomplete="new-password" />
+      </label>
+      <button class="btn btn-outline btn-block" id="pf-secure-submit" type="button">🔐 Amankan Akun</button>`;
+    document.getElementById('pf-secure-submit').addEventListener('click', submitSecure);
+  }
+}
+
+async function submitSecure() {
+  const p = currentProfile();
+  if (!p) return;
+  const email = document.getElementById('pf-secure-email').value.trim();
+  const password = document.getElementById('pf-secure-pass').value;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { secureError('Email tidak valid 📧'); sfx.illegal(); return; }
+  if (password.length < 4) { secureError('Sandi minimal 4 karakter 🔑'); sfx.illegal(); return; }
+  secureError(null);
+  try {
+    const { account } = await Server.secure(p.id, email, password);
+    store.profile = { ...store.profile, email: account.email || email };
+    renderSecureSection();
+    refreshStats();
+    sfx.buy();
+    toast('Akun diamankan! 🔐✅', 'success');
+  } catch (e) {
+    secureError((e.message || 'Gagal.') + ' 🔐');
+    sfx.illegal();
+  }
+}
+
+async function submitChangePassword() {
+  const p = currentProfile();
+  if (!p) return;
+  const oldP = document.getElementById('pf-pass-old').value;
+  const newP = document.getElementById('pf-pass-new').value;
+  if (!oldP || newP.length < 4) { secureError('Isi sandi lama + sandi baru (min. 4) 🔑'); sfx.illegal(); return; }
+  secureError(null);
+  try {
+    await Server.changePassword(p.id, oldP, newP);
+    document.getElementById('pf-pass-old').value = '';
+    document.getElementById('pf-pass-new').value = '';
+    sfx.buy();
+    toast('Sandi diganti! 🔑✅', 'success');
+  } catch (e) {
+    secureError((e.message || 'Gagal.') + ' 🔑');
+    sfx.illegal();
+  }
+}
+
+function openAccountLogin() {
+  document.getElementById('al-login').value = '';
+  document.getElementById('al-pass').value = '';
+  document.getElementById('al-error').hidden = true;
+  openModal('modal-account-login');
+}
+
+async function submitAccountLogin() {
+  const er = document.getElementById('al-error');
+  const login = document.getElementById('al-login').value.trim();
+  const password = document.getElementById('al-pass').value;
+  if (!login || !password) { er.textContent = 'Isi username/email + sandi 🔑'; er.hidden = false; sfx.illegal(); return; }
+  if (!isServerOnline()) { er.textContent = 'Butuh server online 🌐'; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  try {
+    const { account } = await Server.login(login, password);
+    applyServerAccount(account);
+    closeModal('modal-account-login');
+    closeModal('modal-onboarding');
+    document.getElementById('al-pass').value = '';
+    sfx.start();
+    toast(`Selamat datang kembali, ${account.name}! 👑`, 'gold');
+  } catch (e) {
+    er.textContent = (e.message || 'Gagal masuk.') + ' 🔑';
+    er.hidden = false;
+    sfx.illegal();
+  }
+}
+
+function openAccountReset() {
+  closeModal('modal-account-login');
+  document.getElementById('ar-login').value = '';
+  document.getElementById('ar-code').value = '';
+  document.getElementById('ar-newpass').value = '';
+  document.getElementById('ar-error1').hidden = true;
+  document.getElementById('ar-error2').hidden = true;
+  document.getElementById('ar-step1').hidden = false;
+  document.getElementById('ar-step2').hidden = true;
+  document.getElementById('ar-info').textContent = 'Masukkan username / email akunmu. Kode 6 digit dikirim ke email (berlaku 10 menit).';
+  openModal('modal-account-reset');
+}
+
+async function submitResetRequest() {
+  const er = document.getElementById('ar-error1');
+  const login = document.getElementById('ar-login').value.trim();
+  if (!login) { er.textContent = 'Isi username / email dulu 📧'; er.hidden = false; sfx.illegal(); return; }
+  if (!isServerOnline()) { er.textContent = 'Butuh server online 🌐'; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  try {
+    const r = await Server.resetRequest(login);
+    document.getElementById('ar-step1').hidden = true;
+    document.getElementById('ar-step2').hidden = false;
+    document.getElementById('ar-info').textContent = r.email
+      ? `Kode dikirim ke ${r.email} ${r.sent ? '📨✅' : '⚠️ (email server belum aktif — minta kode ke admin)'}`
+      : 'Jika akun ada, kode dikirim ke emailnya. 📨';
+    sfx.buy();
+  } catch (e) {
+    er.textContent = (e.message || 'Gagal.') + ' 📧';
+    er.hidden = false;
+    sfx.illegal();
+  }
+}
+
+async function submitResetConfirm() {
+  const er = document.getElementById('ar-error2');
+  const login = document.getElementById('ar-login').value.trim();
+  const code = document.getElementById('ar-code').value.trim();
+  const newPassword = document.getElementById('ar-newpass').value;
+  if (code.length !== 6 || newPassword.length < 4) { er.textContent = 'Kode 6 digit + sandi baru (min. 4) 🔑'; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  try {
+    const { account } = await Server.resetConfirm(login, code, newPassword);
+    applyServerAccount(account);
+    closeModal('modal-account-reset');
+    closeModal('modal-onboarding');
+    sfx.start();
+    toast(`Sandi direset. Selamat datang, ${account.name}! 🎉`, 'gold');
+  } catch (e) {
+    er.textContent = (e.message || 'Gagal.') + ' 🔑';
+    er.hidden = false;
+    sfx.illegal();
+  }
+}
 function initProfileModal() {
   pfPicker = createCountryPicker('pf');
   $('#pf-name').addEventListener('input', () => updateAvatarPreview('#pf-avatar-preview'));
@@ -660,7 +824,7 @@ async function pullAccount() {
 }
 
 function applyServerAccount(a) {
-  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, nickFx: a.nickFx || 'none', verified: !!a.verified, title: a.title || '', createdAt: store.profile?.createdAt || Date.now() };
+  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, avatarBorder: a.avatarBorder || null, nickFx: a.nickFx || 'none', verified: !!a.verified, title: a.title || '', email: a.email || '', createdAt: store.profile?.createdAt || Date.now() };
   store.stats = { ...a.stats, _rev: a.rev || 0 };
   const s = store.settings;
   if (a.settings?.skin) s.skin = a.settings.skin;
@@ -2659,7 +2823,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat', 'modal-topup', 'modal-spin']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat', 'modal-topup', 'modal-spin', 'modal-account-login', 'modal-account-reset']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
@@ -2674,6 +2838,10 @@ function init() {
     if (screen !== 'home') goMenu(); else window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   $('#adm-login-submit').addEventListener('click', submitAdminLogin);
+  $('#al-submit').addEventListener('click', submitAccountLogin);
+  $('#al-forgot').addEventListener('click', () => { sfx.click(); openAccountReset(); });
+  $('#ar-send').addEventListener('click', submitResetRequest);
+  $('#ar-confirm').addEventListener('click', submitResetConfirm);
   $('#adm-target').addEventListener('input', renderAdminTarget);
   $('#adm-add').addEventListener('click', () => applyAdminStars('add'));
   $('#adm-set').addEventListener('click', () => applyAdminStars('set'));

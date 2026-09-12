@@ -93,6 +93,16 @@ export const Server = {
     api('/api/admin/verified', { method: 'POST', token, body: { target, value } }),
   adminTitle: (token, target, title) =>
     api('/api/admin/title', { method: 'POST', token, body: { target, title } }),
+  secure: (id, email, password) =>
+    api('/api/account/secure', { method: 'POST', body: { id, email, password } }),
+  login: (login, password) =>
+    api('/api/account/login', { method: 'POST', body: { login, password } }),
+  changePassword: (id, oldPassword, newPassword) =>
+    api('/api/account/password', { method: 'POST', body: { id, oldPassword, newPassword } }),
+  resetRequest: (login) =>
+    api('/api/account/reset/request', { method: 'POST', body: { login } }),
+  resetConfirm: (login, code, newPassword) =>
+    api('/api/account/reset/confirm', { method: 'POST', body: { login, code, newPassword } }),
 };
 
 export function openMatchSocket() {

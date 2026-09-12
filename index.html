@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=33" />
+  <link rel="stylesheet" href="css/style.css?v=34" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -255,8 +255,8 @@
             <div id="board" class="board skin-wood"></div>
             <div class="board-fx" id="board-fx" aria-hidden="true">
               <div class="dragon-fly"><div class="dragon-inner">
-                <img class="dragon-img" src="assets/fx/dragon.png?v=33" alt="" draggable="false" />
-                <img class="dragon-fire" src="assets/fx/fire.png?v=33" alt="" draggable="false" />
+                <img class="dragon-img" src="assets/fx/dragon.png?v=34" alt="" draggable="false" />
+                <img class="dragon-fire" src="assets/fx/fire.png?v=34" alt="" draggable="false" />
               </div></div>
               <span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span><span class="ember e4"></span>
             </div>
@@ -435,6 +435,7 @@
       </div>
       <div class="form-error" id="ob-error" hidden></div>
       <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🔑 Masuk & Mulai Bermain</button>
+      <button class="btn btn-ghost btn-block" id="ob-goto-login" type="button">Sudah punya akun? Masuk 🔑</button>
     </div>
   </div>
 
@@ -472,6 +473,9 @@
       <div class="form-error" id="pf-error" hidden></div>
       <div class="profile-stats" id="profile-stats"></div>
       <button class="btn btn-gold btn-lg btn-block" id="pf-save">💾 Simpan Profil</button>
+      <div class="field-label">🔐 Amankan Akun <span class="muted small">(main di HP lain + reset sandi)</span></div>
+      <div id="pf-secure"></div>
+      <div class="form-error" id="pf-secure-error" hidden></div>
       <button class="btn btn-danger-ghost btn-block" id="pf-reset">🗑️ Hapus Semua Data Saya</button>
     </div>
   </div>
@@ -575,6 +579,46 @@
       </label>
       <div class="form-error" id="adm-error" hidden></div>
       <button class="btn btn-gold btn-lg btn-block" id="adm-login-submit" type="button">🔓 Masuk</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-account-login" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-account-login">✕</button>
+      <h2>🔑 Masuk Akun</h2>
+      <p class="muted">Mainkan akunmu di perangkat ini.</p>
+      <label class="field">Username / Email
+        <input id="al-login" maxlength="60" placeholder="cth: theo_king" autocomplete="username" />
+      </label>
+      <label class="field">Sandi
+        <input id="al-pass" type="password" maxlength="64" placeholder="••••••" autocomplete="current-password" />
+      </label>
+      <div class="form-error" id="al-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="al-submit" type="button">🔓 Masuk</button>
+      <button class="btn btn-ghost btn-block" id="al-forgot" type="button">Lupa sandi? Reset via email 📧</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="modal-account-reset" hidden style="display:none">
+    <div class="modal modal-admin">
+      <button class="modal-x" data-close="modal-account-reset">✕</button>
+      <h2>📧 Reset Sandi</h2>
+      <p class="muted" id="ar-info">Masukkan username / email akunmu. Kode 6 digit dikirim ke email (berlaku 10 menit).</p>
+      <div id="ar-step1">
+        <label class="field">Username / Email
+          <input id="ar-login" maxlength="60" placeholder="cth: theo_king" autocomplete="username" />
+        </label>
+        <div class="form-error" id="ar-error1" hidden></div>
+        <button class="btn btn-gold btn-lg btn-block" id="ar-send" type="button">📨 Kirim Kode</button>
+      </div>
+      <div id="ar-step2" hidden>
+        <label class="field">Kode 6 Digit
+          <input id="ar-code" maxlength="6" inputmode="numeric" placeholder="cth: 123456" autocomplete="one-time-code" />
+        </label>
+        <label class="field">Sandi Baru
+          <input id="ar-newpass" type="password" maxlength="64" placeholder="minimal 4 karakter" autocomplete="new-password" />
+        </label>
+        <div class="form-error" id="ar-error2" hidden></div>
+        <button class="btn btn-gold btn-lg btn-block" id="ar-confirm" type="button">✅ Reset & Masuk</button>
+      </div>
     </div>
   </div>
   <div class="modal-backdrop" id="modal-admin" hidden style="display:none">
@@ -777,7 +821,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=33"></script>
-  <script type="module" src="js/app.js?v=33"></script>
+  <script src="js/vendor/peerjs.min.js?v=34"></script>
+  <script type="module" src="js/app.js?v=34"></script>
 </body>
 </html>
