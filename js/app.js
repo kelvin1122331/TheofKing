@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=24';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=24';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=24';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=24';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=24';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=24';
-import { Game } from './game.js?v=24';
-import { preloadPieces } from './pieces.js?v=24';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=24';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=24';
-import { SKINS, skinById, applySkin } from './skins.js?v=24';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=24';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=25';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=25';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=25';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=25';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=25';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=25';
+import { Game } from './game.js?v=25';
+import { preloadPieces } from './pieces.js?v=25';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=25';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=25';
+import { SKINS, skinById, applySkin } from './skins.js?v=25';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=25';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -2062,6 +2062,8 @@ function renderShop() {
       ? `<button class="btn btn-gold btn-sm" disabled>✓ Dipakai</button>`
       : has
         ? `<button class="btn btn-outline btn-sm" data-equip="${sk.id}">Pakai</button>`
+        : sk.spinOnly
+        ? `<button class="btn btn-outline btn-sm" disabled>🎰 Eksklusif Spin</button>`
         : `<button class="btn btn-gold btn-sm" data-buy="${sk.id}" ${(st.coins || 0) < sk.price ? 'disabled' : ''}>Beli — ${sk.price} 🪙</button>`;
     return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
       <div class="skin-prev skin-${sk.id}"></div>
@@ -2077,6 +2079,7 @@ function renderShop() {
   renderAvatarsGrid();
   renderNickFxGrid();
   renderTopupGrid();
+  renderSpinPane();
 }
 
 let shopTab = 'prot';
@@ -2086,7 +2089,7 @@ function paintShopTabs() {
     t.classList.toggle('active', t.dataset.shopTab === shopTab);
     t.onclick = () => { shopTab = t.dataset.shopTab; sfx.click(); paintShopTabs(); };
   });
-  for (const id of ['prot', 'skins', 'borders', 'avatars', 'nickfx', 'topup']) {
+  for (const id of ['prot', 'skins', 'borders', 'avatars', 'nickfx', 'topup', 'spin']) {
     document.getElementById('shop-pane-' + id).hidden = shopTab !== id;
   }
 }
@@ -2135,7 +2138,9 @@ function renderNickFxGrid() {
     const isEq = eq === x.id;
     const prev = x.id === 'rainbow'
       ? '<span class="nick-rainbow" style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>'
-      : '<span style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>';
+      : x.id === 'inferno'
+        ? '<span class="nick-inferno" style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>'
+        : '<span style="font-size:1.25rem;font-weight:800;">Nama Kamu</span>';
     return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
       <div class="cos-prev">${prev}</div>
       <div class="skin-name">${x.emoji} ${esc(x.name)}</div>
@@ -2175,6 +2180,7 @@ function equipNickFx(id, fromBuy = false) {
 function cosButton(kind, item, has, isEq, coins) {
   if (isEq) return `<button class="btn btn-gold btn-sm" disabled>✓ Dipakai</button>`;
   if (has) return `<button class="btn btn-outline btn-sm" data-eq-${kind}="${item.id}">Pakai</button>`;
+  if (!has && item.spinOnly) return `<button class="btn btn-outline btn-sm" disabled>🎰 Eksklusif Spin</button>`;
   return `<button class="btn btn-gold btn-sm" data-buy-${kind}="${item.id}" ${coins < item.price ? 'disabled' : ''}>Beli — ${item.price} 🪙</button>`;
 }
 
@@ -2219,7 +2225,7 @@ function renderAvatarsGrid() {
 
 function buyBorder(id) {
   const b = borderById(id);
-  if (!b) return;
+  if (!b || b.spinOnly) return;
   const cur = store.stats;
   if ((cur.coins || 0) < b.price) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
   cur.coins -= b.price;
@@ -2269,7 +2275,7 @@ function equipAvatar(id, fromBuy = false) {
 
 function buySkin(id) {
   const sk = skinById(id);
-  if (!sk) return;
+  if (!sk || sk.spinOnly) return;
   const cur = store.stats;
   if ((cur.coins || 0) < sk.price) { toast('Koin kurang! Menangkan game untuk dapat 🪙', 'error'); sfx.illegal(); return; }
   cur.coins -= sk.price;
@@ -2303,6 +2309,176 @@ function equipSkin(id) {
   sfx.click();
   renderShop();
   document.dispatchEvent(new CustomEvent('tok:stats')); // sinkron skin
+}
+
+// ------------------------- lucky spin -------------------------
+const SPIN_COST = 50;
+const SPIN_POOL = [
+  { key: 'prot',    icon: '🛡️', label: '+1 Proteksi',      weight: 80, rank: 0, rarity: 'Umum' },
+  { key: 'prot',    icon: '🛡️', label: '+1 Proteksi',      weight: 80, rank: 0, rarity: 'Umum' },
+  { key: 'prot',    icon: '🛡️', label: '+1 Proteksi',      weight: 80, rank: 0, rarity: 'Umum' },
+  { key: 'coin50',  icon: '🪙', label: '50 Koin',          weight: 70, rank: 1, rarity: 'Umum' },
+  { key: 'coin100', icon: '💰', label: '100 Koin',         weight: 70, rank: 2, rarity: 'Langka' },
+  { key: 'effect',  icon: '🔥', label: 'Efek Inferno',     weight: 40, rank: 3, rarity: 'Epik' },
+  { key: 'border',  icon: '🖼️', label: 'Border Supernova', weight: 20, rank: 4, rarity: 'Legendaris' },
+  { key: 'skin',    icon: '🎨', label: 'Skin Galaksi',     weight: 10, rank: 5, rarity: 'Mitis' },
+];
+const SPIN_TOTAL_W = SPIN_POOL.reduce((a, x) => a + x.weight, 0);
+const SPIN_RANK_COLOR = ['#9fb3c8', '#9fb3c8', '#4da3ff', '#c084fc', '#f5c044', '#ff5d5d'];
+let spinning = false;
+
+function rollSpinSlot() {
+  let r = Math.random() * SPIN_TOTAL_W;
+  for (const x of SPIN_POOL) { r -= x.weight; if (r < 0) return x; }
+  return SPIN_POOL[SPIN_POOL.length - 1];
+}
+
+function spinCellHTML(x) {
+  const c = SPIN_RANK_COLOR[x.rank];
+  return `<div class="spin-cell" style="border-color:${c}"><div class="spin-cell-icon">${x.icon}</div><div class="spin-cell-label">${x.label}</div></div>`;
+}
+
+function renderSpinPane() {
+  const coins = store.stats.coins || 0;
+  document.getElementById('spin-balance').innerHTML = `🪙 <b>${coins}</b> • 50 🪙/spin`;
+  document.getElementById('spin-prizes').innerHTML = SPIN_POOL.map((x) => {
+    const pct = ((x.weight / SPIN_TOTAL_W) * 100).toFixed(1);
+    const c = SPIN_RANK_COLOR[x.rank];
+    return `<div class="spin-prize" style="border-color:${c}"><div class="spin-prize-icon">${x.icon}</div><div class="spin-prize-label">${x.label}</div><div class="spin-prize-rate" style="color:${c}">${x.rarity} • ${pct}%</div></div>`;
+  }).join('');
+  if (!spinning) {
+    document.getElementById('spin-strip').innerHTML = SPIN_POOL.map(spinCellHTML).join('');
+    document.getElementById('spin-strip').style.transform = 'translateX(0)';
+  }
+  const b1 = document.getElementById('btn-spin-1');
+  const b10 = document.getElementById('btn-spin-10');
+  b1.disabled = spinning || coins < SPIN_COST;
+  b10.disabled = spinning || coins < SPIN_COST * 10;
+  b1.textContent = '🎰 SPIN 1x — 50 🪙';
+  b10.textContent = '🔥 SPIN 10x — 500 🪙';
+  b1.onclick = () => doSpin(1);
+  b10.onclick = () => doSpin(10);
+}
+
+function setSpinButtons(dis) {
+  const b1 = document.getElementById('btn-spin-1');
+  const b10 = document.getElementById('btn-spin-10');
+  if (b1) b1.disabled = dis;
+  if (b10) b10.disabled = dis;
+}
+
+async function doSpin(n) {
+  if (spinning) return;
+  const cost = SPIN_COST * n;
+  const cur = store.stats;
+  if ((cur.coins || 0) < cost) { toast('Koin kurang untuk spin! Top up atau menangkan game 🪙', 'error'); sfx.illegal(); return; }
+  cur.coins -= cost;
+  saveStats(cur);
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  spinning = true;
+  renderShop();
+  setSpinButtons(true);
+  const fast = (typeof window !== 'undefined' && window.__SPIN_FAST);
+  const results = [];
+  for (let i = 0; i < n; i++) results.push(rollSpinSlot());
+  const best = results.reduce((a, b) => (b.rank > a.rank ? b : a), results[0]);
+  sfx.versus();
+  const tickT = setInterval(() => sfx.tick(), fast ? 30 : 120);
+  await animateSpinStrip(best, fast ? 80 : (n === 1 ? 4200 : 5200));
+  clearInterval(tickT);
+  const granted = results.map(grantSpinPrize);
+  document.dispatchEvent(new CustomEvent('tok:stats'));
+  spinning = false;
+  renderShop();
+  showSpinResult(granted, n);
+}
+
+/** Animasi strip berjalan lalu berhenti tepat di hadiah pemenang. */
+function animateSpinStrip(best, ms) {
+  return new Promise((resolve) => {
+    const wrap = document.getElementById('spin-window');
+    const strip = document.getElementById('spin-strip');
+    const CELL = 80, COUNT = 46, WIN_I = 38;
+    const cells = [];
+    for (let i = 0; i < COUNT; i++) cells.push(i === WIN_I ? best : SPIN_POOL[Math.floor(Math.random() * SPIN_POOL.length)]);
+    strip.style.transition = 'none';
+    strip.innerHTML = cells.map(spinCellHTML).join('');
+    const wrapW = wrap.clientWidth || 320;
+    strip.style.transform = `translateX(${wrapW / 2 - (2 * CELL + CELL / 2)}px)`;
+    void strip.offsetWidth;
+    strip.style.transition = `transform ${ms}ms cubic-bezier(0.12, 0.8, 0.08, 1)`;
+    strip.style.transform = `translateX(${wrapW / 2 - (WIN_I * CELL + CELL / 2)}px)`;
+    let done = false;
+    const fin = () => { if (done) return; done = true; strip.style.transition = 'none'; resolve(); };
+    strip.ontransitionend = fin;
+    setTimeout(fin, ms + 400); // fallback: jsdom tak punya transitionend
+  });
+}
+
+function grantSpinPrize(x) {
+  const cur = store.stats;
+  const out = { slot: x, title: x.label, note: '' };
+  if (x.key === 'prot') {
+    cur.protections = (cur.protections || 0) + 1;
+    out.title = '🛡️ +1 Star Protection';
+  } else if (x.key === 'coin50') {
+    cur.coins = (cur.coins || 0) + 50;
+    out.title = '🪙 +50 Koin';
+  } else if (x.key === 'coin100') {
+    cur.coins = (cur.coins || 0) + 100;
+    out.title = '💰 +100 Koin';
+  } else if (x.key === 'effect') {
+    if (!ownedNickFx().includes('inferno')) {
+      const st = store.settings; st.nickfx = [...new Set([...ownedNickFx(), 'inferno'])]; store.settings = st;
+      const p = store.profile || {}; p.nickFx = 'inferno'; store.profile = p;
+      out.title = '🔥 Efek Nickname Inferno!'; out.note = 'Otomatis dipakai';
+    } else { cur.coins = (cur.coins || 0) + 80; out.title = '🔥 Inferno (duplikat)'; out.note = 'Dikonversi +80 🪙'; }
+  } else if (x.key === 'border') {
+    if (!ownedBorders().includes('supernova')) {
+      const st = store.settings; st.borders = [...new Set([...ownedBorders(), 'supernova'])]; store.settings = st;
+      const p = store.profile || {}; p.avatarBorder = 'supernova'; store.profile = p;
+      out.title = '🖼️ Border Supernova!'; out.note = 'Otomatis dipakai';
+    } else { cur.coins = (cur.coins || 0) + 200; out.title = '🖼️ Supernova (duplikat)'; out.note = 'Dikonversi +200 🪙'; }
+  } else if (x.key === 'skin') {
+    if (!ownedSkins().includes('galaksi')) {
+      const st = store.settings; st.skins = [...new Set([...ownedSkins(), 'galaksi'])]; st.skin = 'galaksi'; store.settings = st;
+      applyEquippedSkin();
+      out.title = '🎨 Skin Galaksi!'; out.note = 'Otomatis dipakai';
+    } else { cur.coins = (cur.coins || 0) + 200; out.title = '🎨 Galaksi (duplikat)'; out.note = 'Dikonversi +200 🪙'; }
+  }
+  saveStats(cur);
+  return out;
+}
+
+function showSpinResult(granted, n) {
+  const freshJackpot = granted.some((g) => g.slot.rank >= 4 && !g.note.includes('Dikonversi'));
+  const box = document.getElementById('modal-spin-box');
+  box.classList.toggle('jackpot', freshJackpot);
+  document.getElementById('spin-result-title').textContent = freshJackpot ? '🌟 JACKPOT! 🌟' : (n === 1 ? '🎉 Kamu Dapat!' : `🎉 Hasil ${n}x Spin!`);
+  const body = document.getElementById('spin-result-body');
+  if (n === 1) {
+    const g = granted[0];
+    const c = SPIN_RANK_COLOR[g.slot.rank];
+    body.innerHTML = `
+      <div class="spin-hero${freshJackpot ? ' jackpot' : ''}" style="border-color:${c};box-shadow:0 0 34px ${c}">
+        <div class="spin-hero-icon">${g.slot.icon}</div>
+        <div class="spin-hero-title">${esc(g.title)}</div>
+        <div class="spin-hero-rarity" style="color:${c}">${g.slot.rarity}</div>
+        ${g.note ? `<div class="muted small">${esc(g.note)}</div>` : ''}
+      </div>`;
+  } else {
+    const bestRank = Math.max(...granted.map((g) => g.slot.rank));
+    body.innerHTML = `<div class="spin-results">` + granted.map((g) => {
+      const c = SPIN_RANK_COLOR[g.slot.rank];
+      const isBest = g.slot.rank === bestRank && bestRank >= 2;
+      return `<div class="spin-mini${isBest ? ' best' : ''}" style="border-color:${c}"><div class="spin-mini-icon">${g.slot.icon}</div><div class="spin-mini-label">${esc(g.title)}</div></div>`;
+    }).join('') + `</div>`;
+  }
+  document.getElementById('btn-spin-claim').onclick = () => { sfx.click(); closeModal('modal-spin'); };
+  openModal('modal-spin');
+  if (freshJackpot) { sfx.rankup(); setTimeout(() => confettiBurst(320), 150); }
+  else if (granted.some((g) => g.slot.rank >= 2)) { sfx.win(); setTimeout(() => confettiBurst(160), 150); }
+  else { sfx.buy(); }
 }
 
 // ------------------------- init -------------------------
@@ -2346,7 +2522,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat', 'modal-topup']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat', 'modal-topup', 'modal-spin']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });

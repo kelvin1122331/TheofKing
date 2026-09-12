@@ -1052,3 +1052,114 @@ body { touch-action: manipulation; }
   text-decoration: none; text-align: center;
 }
 .btn-wa:hover:not(:disabled) { box-shadow: 0 10px 30px rgba(46, 224, 122, 0.45); transform: translateY(-1px); }
+
+/* ---------- border Supernova (spin eksklusif, beranimasi) ---------- */
+.ava-border-supernova {
+  background: conic-gradient(#ffd166, #c084fc, #22d3ee, #ff5d8f, #ffd166);
+  animation: supernova-ring 2.4s linear infinite;
+}
+@keyframes supernova-ring {
+  0%, 100% { box-shadow: 0 0 12px rgba(255, 209, 102, 0.95), 0 0 4px #fff; }
+  33% { box-shadow: 0 0 20px rgba(192, 132, 252, 0.95), 0 0 6px #fff; }
+  66% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.95), 0 0 6px #fff; }
+}
+.ava-frame img.fx-supernova {
+  animation: supernova-fx 2.6s ease-in-out infinite;
+}
+@keyframes supernova-fx {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg) drop-shadow(0 0 6px rgba(255, 209, 102, 0.9)); }
+  50% { transform: scale(1.07) rotate(180deg); filter: hue-rotate(90deg) drop-shadow(0 0 14px rgba(192, 132, 252, 1)); }
+}
+
+/* ---------- efek nickname Inferno (lebih keren dari rainbow) ---------- */
+.nick-inferno {
+  background: linear-gradient(180deg, #fff7ad 0%, #ffd166 22%, #ff9f1c 42%, #ff5d2e 62%, #c1121f 82%, #5c0606 100%);
+  background-size: 100% 220%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-weight: 900;
+  animation: inferno-flow 1.6s ease-in-out infinite alternate, inferno-flicker 0.35s ease-in-out infinite alternate;
+}
+@keyframes inferno-flow { from { background-position: 50% 0%; } to { background-position: 50% 100%; } }
+@keyframes inferno-flicker {
+  from { filter: drop-shadow(0 0 3px rgba(255, 159, 28, 0.95)) drop-shadow(0 -2px 6px rgba(255, 90, 0, 0.7)); }
+  to { filter: drop-shadow(0 0 7px rgba(255, 80, 0, 1)) drop-shadow(0 -3px 10px rgba(255, 200, 60, 0.9)); }
+}
+
+/* ---------- skin Galaksi (spin eksklusif, beranimasi) ---------- */
+.skin-galaksi   { --sq-light: #d9ccff; --sq-dark: #2a1a5e; }
+.board-frame:has(.skin-galaksi) { --frame-1: #2a1a5e; --frame-2: #0d0621; }
+.board.skin-galaksi { box-shadow: 0 0 30px rgba(139, 92, 246, 0.55); }
+.board.skin-galaksi .sq { animation: galaksi-shift 7s linear infinite; }
+@keyframes galaksi-shift {
+  0%, 100% { filter: hue-rotate(0deg) saturate(1.2); }
+  50% { filter: hue-rotate(70deg) saturate(1.7); }
+}
+.board.skin-galaksi .piece img { filter: sepia(1) saturate(3) hue-rotate(230deg) brightness(1.1) drop-shadow(0 0 6px rgba(192, 132, 252, 0.9)); }
+.skin-prev.skin-galaksi { animation: galaksi-shift 7s linear infinite; }
+
+/* ---------- lucky spin ---------- */
+.spin-prizes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+.spin-prize {
+  background: rgba(255, 255, 255, 0.045); border: 2px solid; border-radius: 12px;
+  padding: 7px 4px; text-align: center;
+}
+.spin-prize-icon { font-size: 1.4rem; }
+.spin-prize-label { font-size: 0.68rem; font-weight: 800; }
+.spin-prize-rate { font-size: 0.64rem; font-weight: 700; }
+.spin-window {
+  position: relative; overflow: hidden; border-radius: 14px;
+  border: 2px solid rgba(245, 192, 68, 0.5); background: rgba(0, 0, 0, 0.35);
+  margin: 8px 0 12px; padding: 10px 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.spin-strip { display: flex; width: max-content; will-change: transform; }
+.spin-cell {
+  width: 72px; margin: 0 4px; flex: none;
+  background: rgba(255, 255, 255, 0.06); border: 2px solid; border-radius: 12px;
+  padding: 8px 2px; text-align: center;
+}
+.spin-cell-icon { font-size: 1.7rem; }
+.spin-cell-label { font-size: 0.62rem; font-weight: 800; }
+.spin-pointer {
+  position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+  font-size: 1.5rem; z-index: 2; filter: drop-shadow(0 2px 4px #000);
+}
+.spin-btns { display: flex; gap: 10px; }
+.spin-btns .btn { flex: 1; }
+.modal-spin { text-align: center; position: relative; overflow: hidden; }
+.modal-spin.jackpot { border: 3px solid var(--gold); box-shadow: 0 0 60px rgba(245, 192, 68, 0.6); }
+.modal-spin.jackpot::before {
+  content: ''; position: absolute; inset: -60%;
+  background: repeating-conic-gradient(rgba(245, 192, 68, 0.16) 0deg 12deg, transparent 12deg 24deg);
+  animation: jackpot-rays 6s linear infinite; pointer-events: none;
+}
+@keyframes jackpot-rays { to { transform: rotate(360deg); } }
+.spin-hero {
+  border: 3px solid; border-radius: 18px; padding: 22px 14px; margin: 12px 0 16px;
+  background: rgba(0, 0, 0, 0.35);
+  animation: hero-win 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.spin-hero.jackpot { animation: hero-win 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both, hero-glow 1.2s ease-in-out 0.7s infinite; }
+@keyframes hero-win { from { transform: scale(0.3) rotate(-10deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes hero-glow { 50% { transform: scale(1.04); } }
+.spin-hero-icon { font-size: 3.4rem; animation: trophyPop 0.6s 0.2s both; }
+.spin-hero-title { font-size: 1.2rem; font-weight: 900; margin-top: 6px; }
+.spin-hero-rarity { font-size: 0.95rem; font-weight: 800; margin-top: 2px; }
+.spin-results { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0 16px; }
+.spin-mini {
+  background: rgba(255, 255, 255, 0.05); border: 2px solid; border-radius: 12px;
+  padding: 8px 2px; animation: popIn 0.4s both;
+}
+.spin-mini:nth-child(2) { animation-delay: 0.05s; } .spin-mini:nth-child(3) { animation-delay: 0.1s; }
+.spin-mini:nth-child(4) { animation-delay: 0.15s; } .spin-mini:nth-child(5) { animation-delay: 0.2s; }
+.spin-mini:nth-child(6) { animation-delay: 0.25s; } .spin-mini:nth-child(7) { animation-delay: 0.3s; }
+.spin-mini:nth-child(8) { animation-delay: 0.35s; } .spin-mini:nth-child(9) { animation-delay: 0.4s; }
+.spin-mini:nth-child(10) { animation-delay: 0.45s; }
+.spin-mini.best { box-shadow: 0 0 18px rgba(245, 192, 68, 0.8); transform: scale(1.06); }
+.spin-mini-icon { font-size: 1.6rem; }
+.spin-mini-label { font-size: 0.6rem; font-weight: 800; }
+@media (max-width: 640px) {
+  .spin-prizes { grid-template-columns: repeat(4, 1fr); }
+  .spin-results { grid-template-columns: repeat(5, 1fr); }
+}

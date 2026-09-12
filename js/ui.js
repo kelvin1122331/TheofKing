@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=24';
-import { rankForStars, rankProgress } from './ranks.js?v=24';
-import { sfx } from './sound.js?v=24';
-import { flagFor } from './countries.js?v=24';
-import { borderImg } from './cosmetics.js?v=24';
+import { avatarGradientFor, initialsFor } from './store.js?v=25';
+import { rankForStars, rankProgress } from './ranks.js?v=25';
+import { sfx } from './sound.js?v=25';
+import { flagFor } from './countries.js?v=25';
+import { borderImg, borderFx } from './cosmetics.js?v=25';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -131,13 +131,17 @@ export function avatarHTML(profileOrSeed, size = 40) {
 /** Overlay bingkai berbasis gambar (tengah transparan via CSS mask). */
 export function borderOverlayHTML(borderId) {
   const src = borderId ? borderImg(borderId) : null;
-  return src ? `<span class="ava-frame"><img src="${src}" alt="" /></span>` : '';
+  if (!src) return '';
+  const fx = borderFx(borderId);
+  return `<span class="ava-frame"><img src="${src}" alt=""${fx ? ` class="${fx}"` : ''} /></span>`;
 }
 
 /** Nama pemain; efek rainbow bila fx diset. Bendera/emoji di luar span agar tak transparan. */
 export function nickHTML(name, fx) {
   const t = esc(name || '\u2013');
-  return fx === 'rainbow' ? `<span class="nick-rainbow">${t}</span>` : t;
+  if (fx === 'rainbow') return `<span class="nick-rainbow">${t}</span>`;
+  if (fx === 'inferno') return `<span class="nick-inferno">${t}</span>`;
+  return t;
 }
 
 export function rankBadgeHTML(stars, showName = true) {

@@ -28,6 +28,7 @@ export const BORDERS = [
   { id: 'naga',    name: 'Naga',           desc: 'Bingkai naga perkasa',    price: 800 },
   { id: 'tengkorak', name: 'Bayangan Tengkorak', desc: 'Bingkai kegelapan', price: 900 },
   { id: 'nebula',  name: 'Nebula',         desc: 'Bingkai kosmik teragung', price: 1000 },
+  { id: 'supernova', name: 'Supernova', desc: 'Eksklusif Lucky Spin — beranimasi!', price: 1500, spinOnly: true },
 ];
 
 export const AVATARS = [
@@ -61,7 +62,17 @@ const BORDER_IMG = {
   naga: 'assets/frames/naga.png',
   tengkorak: 'assets/frames/tengkorak.png',
   nebula: 'assets/frames/nebula.png',
+  supernova: 'assets/frames/supernova.png',
 };
+
+/** Bingkai dengan efek animasi khusus pada overlay gambar. */
+const BORDER_FX = {
+  supernova: 'fx-supernova',
+};
+
+export function borderFx(id) {
+  return BORDER_FX[id] || '';
+}
 
 /** Path gambar bingkai berbasis image, atau null bila CSS murni. */
 export function borderImg(id) {
@@ -75,6 +86,7 @@ export function avatarImg(id) {
 export const NICKFX = [
   { id: 'none',    name: 'Tanpa Efek',       desc: 'Nama normal',                 price: 0,   emoji: '\U0001F4DD' },
   { id: 'rainbow', name: 'Nickname Rainbow', desc: 'Nama warna-warni beranimasi', price: 200, emoji: '\U0001F308' },
+  { id: 'inferno', name: 'Nickname Inferno', desc: 'Nama api menyala beranimasi — eksklusif Spin!', price: 500, emoji: '\U0001F525', spinOnly: true },
 ];
 
 export function nickFxById(id) {

@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=24" />
+  <link rel="stylesheet" href="css/style.css?v=25" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -341,6 +341,7 @@
         <button type="button" class="tab" data-shop-tab="avatars">😎 Avatar</button>
         <button type="button" class="tab" data-shop-tab="nickfx">✨ Efek</button>
         <button type="button" class="tab" data-shop-tab="topup">🪙 Top Up</button>
+        <button type="button" class="tab" data-shop-tab="spin">🎰 Spin</button>
       </div>
       <div id="shop-pane-prot">
         <h3 class="shop-title">🛡️ Star Protection</h3>
@@ -370,6 +371,19 @@
       <div id="shop-pane-topup" hidden>
         <h3 class="shop-title">🪙 Top Up Koin <span class="muted small">— bayar via WhatsApp, diproses admin</span></h3>
         <div class="skins-grid" id="topup-grid"></div>
+      </div>
+      <div id="shop-pane-spin" hidden>
+        <h3 class="shop-title">🎰 Lucky Spin <span class="muted small">— menangkan hadiah eksklusif!</span></h3>
+        <div class="shop-balance" id="spin-balance"></div>
+        <div class="spin-prizes" id="spin-prizes"></div>
+        <div class="spin-window" id="spin-window">
+          <div class="spin-pointer">🔻</div>
+          <div class="spin-strip" id="spin-strip"></div>
+        </div>
+        <div class="spin-btns">
+          <button class="btn btn-gold btn-lg" id="btn-spin-1" type="button"></button>
+          <button class="btn btn-gold btn-lg" id="btn-spin-10" type="button"></button>
+        </div>
       </div>
     </div>
   </div>
@@ -490,6 +504,15 @@
       </div>
       <a class="btn btn-wa btn-block" id="topup-wa-btn" href="#" target="_blank" rel="noopener">💬 Bayar via WhatsApp</a>
       <button class="btn btn-outline btn-block" data-close="modal-topup" style="margin-top:8px">Batal</button>
+    </div>
+  </div>
+
+  <!-- ============ SPIN RESULT ============ -->
+  <div class="modal-backdrop" id="modal-spin" hidden style="display:none">
+    <div class="modal modal-spin" id="modal-spin-box">
+      <h2 id="spin-result-title">🎉 Hasil Spin</h2>
+      <div id="spin-result-body"></div>
+      <button class="btn btn-gold btn-block" id="btn-spin-claim" type="button">🎉 Klaim</button>
     </div>
   </div>
 
@@ -711,7 +734,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=24"></script>
-  <script type="module" src="js/app.js?v=24"></script>
+  <script src="js/vendor/peerjs.min.js?v=25"></script>
+  <script type="module" src="js/app.js?v=25"></script>
 </body>
 </html>

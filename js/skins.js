@@ -12,6 +12,7 @@ export const SKINS = [
   { id: 'ocean',    name: 'Ocean',       desc: 'Segar biru laut.',    price: 100 },
   { id: 'candy',    name: 'Candy Pop',   desc: 'Ceria pink permen.',  price: 100 },
   { id: 'shadow',   name: 'Shadow',      desc: 'Gelap misterius.',    price: 100 },
+  { id: 'galaksi',  name: 'Galaksi',     desc: 'Antariksa beranimasi — eksklusif Spin!', price: 500, spinOnly: true },
 ];
 
 export const DEFAULT_SKINS = ['wood', 'midnight', 'emerald'];
