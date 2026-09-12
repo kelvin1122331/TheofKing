@@ -13,8 +13,8 @@ const { WebSocketServer } = require('ws');
 
 const PORT = Number(process.env.PORT || 3000);
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-const ADMIN_USER = process.env.ADMIN_USER || 'admintheo5757';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'theofkingsid';
+const ADMIN_USER = process.env.ADMIN_USER || 'theoid';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'theo5757';
 
 // ------------------------- DB (JSON file) -------------------------
 let db = { accounts: {}, adminTokens: {} };

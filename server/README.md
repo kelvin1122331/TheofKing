@@ -22,8 +22,8 @@ di footer).
 | ------------ | ------------------ | --------------------------------- |
 | `PORT`       | `3000`             | Port server                       |
 | `DATA_FILE`  | `./data.json`      | File database JSON                |
-| `ADMIN_USER` | `admintheo5757`    | User admin panel                  |
-| `ADMIN_PASS` | `theofkingsid`     | Sandi admin panel                 |
+| `ADMIN_USER` | `theoid`    | User admin panel                  |
+| `ADMIN_PASS` | `theo5757`     | Sandi admin panel                 |
 
 Contoh: `PORT=8080 ADMIN_PASS=sandi-baru npm start`
 

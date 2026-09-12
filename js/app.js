@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=32';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=32';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=32';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst, openEmotePicker } from './ui.js?v=32';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=32';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=32';
-import { Game } from './game.js?v=32';
-import { preloadPieces } from './pieces.js?v=32';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=32';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=32';
-import { SKINS, skinById, applySkin } from './skins.js?v=32';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=32';
+import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=33';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=33';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=33';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst, openEmotePicker } from './ui.js?v=33';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=33';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=33';
+import { Game } from './game.js?v=33';
+import { preloadPieces } from './pieces.js?v=33';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=33';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=33';
+import { SKINS, skinById, applySkin } from './skins.js?v=33';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=33';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -1625,8 +1625,8 @@ function renderInbox(mark) {
 }
 
 // ------------------------- admin -------------------------
-const ADMIN_USER = 'admintheo5757';
-const ADMIN_PASS = 'theofkingsid';
+const ADMIN_USER = 'theoid';
+const ADMIN_PASS = 'theo5757';
 let brandTaps = [];
 let isAdmin = false;
 let adminToken = null;
