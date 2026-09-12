@@ -1,10 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=20';
-import { rankForStars, rankProgress } from './ranks.js?v=20';
-import { sfx } from './sound.js?v=20';
-import { flagFor } from './countries.js?v=20';
+import { avatarGradientFor, initialsFor } from './store.js?v=21';
+import { rankForStars, rankProgress } from './ranks.js?v=21';
+import { sfx } from './sound.js?v=21';
+import { flagFor } from './countries.js?v=21';
+import { borderImg } from './cosmetics.js?v=21';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -123,7 +124,14 @@ export function avatarHTML(profileOrSeed, size = 40) {
     style = `background:${avatarGradientFor(p.username)};`;
   }
   const bid = p.avatarBorder && p.avatarBorder !== 'none' ? ` ava-border-${esc(p.avatarBorder)}` : '';
-  return `<span class="avatar-wrap${bid}"><span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.44)}px;${style}">${inner}</span></span>`;
+  const frame = borderOverlayHTML(p.avatarBorder);
+  return `<span class="avatar-wrap${bid}"><span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.44)}px;${style}">${inner}</span>${frame}</span>`;
+}
+
+/** Overlay bingkai berbasis gambar (tengah transparan via CSS mask). */
+export function borderOverlayHTML(borderId) {
+  const src = borderId ? borderImg(borderId) : null;
+  return src ? `<span class="ava-frame"><img src="${src}" alt="" /></span>` : '';
 }
 
 /** Nama pemain; efek rainbow bila fx diset. Bendera/emoji di luar span agar tak transparan. */

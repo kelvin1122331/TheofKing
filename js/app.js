@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=20';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=20';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=20';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML } from './ui.js?v=20';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=20';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=20';
-import { Game } from './game.js?v=20';
-import { preloadPieces } from './pieces.js?v=20';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=20';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=20';
-import { SKINS, skinById, applySkin } from './skins.js?v=20';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=20';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=21';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=21';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=21';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, borderOverlayHTML } from './ui.js?v=21';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=21';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=21';
+import { Game } from './game.js?v=21';
+import { preloadPieces } from './pieces.js?v=21';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=21';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=21';
+import { SKINS, skinById, applySkin } from './skins.js?v=21';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=21';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -2061,7 +2061,7 @@ function renderBordersGrid() {
     const has = owned.includes(bd.id);
     const isEq = eq === bd.id;
     return `<div class="skin-card ${isEq ? 'equipped' : ''} ${has ? 'owned' : ''}">
-      <div class="cos-prev"><span class="avatar-wrap${bd.id === 'none' ? '' : ' ava-border-' + bd.id}"><span class="avatar" style="width:40px;height:40px;font-size:18px;background:${avatarGradientFor(me.username)}">${esc(initialsFor(me.name))}</span></span></div>
+      <div class="cos-prev"><span class="avatar-wrap${bd.id === 'none' ? '' : ' ava-border-' + bd.id}"><span class="avatar" style="width:40px;height:40px;font-size:18px;background:${avatarGradientFor(me.username)}">${esc(initialsFor(me.name))}</span>${borderOverlayHTML(bd.id)}</span></div>
       <div class="skin-name">${esc(bd.name)}</div>
       <div class="skin-desc">${esc(bd.desc)}</div>
       ${cosButton('border', bd, has, isEq, coins)}

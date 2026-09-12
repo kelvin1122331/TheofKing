@@ -17,6 +17,7 @@ export const BORDERS = [
   { id: 'storm',   name: 'Petir',          desc: 'Kuning elektrik',       price: 140 },
   { id: 'royal',   name: 'Mahkota Raja',   desc: 'Ungu + emas bangsawan', price: 150 },
   { id: 'galaxy',  name: 'Galaksi',        desc: 'Antariksa berbintang',  price: 175 },
+  { id: 'mecha',   name: 'Mecha',          desc: 'Bingkai robot futuristik', price: 200 },
 ];
 
 export const AVATARS = [
@@ -36,6 +37,15 @@ export function borderById(id) {
 
 export function avatarById(id) {
   return AVATARS.find((a) => a.id === id) || null;
+}
+
+const BORDER_IMG = {
+  mecha: 'assets/frames/mecha.png',
+};
+
+/** Path gambar bingkai berbasis image, atau null bila CSS murni. */
+export function borderImg(id) {
+  return BORDER_IMG[id] || null;
 }
 
 export function avatarImg(id) {
