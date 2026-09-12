@@ -2,16 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=13';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=13';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=13';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=13';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=13';
-import { Game } from './game.js?v=13';
-import { preloadPieces } from './pieces.js?v=13';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=13';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=13';
-import { SKINS, skinById, applySkin } from './skins.js?v=13';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=14';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=14';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=14';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=14';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=14';
+import { Game } from './game.js?v=14';
+import { preloadPieces } from './pieces.js?v=14';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=14';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=14';
+import { SKINS, skinById, applySkin } from './skins.js?v=14';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -1307,9 +1307,9 @@ function init() {
   $('#brand-home').addEventListener('click', (e) => {
     e.preventDefault(); sfx.click();
     const now = Date.now();
-    brandTaps = brandTaps.filter((t) => now - t < 2500);
+    brandTaps = brandTaps.filter((t) => now - t < 3000);
     brandTaps.push(now);
-    if (brandTaps.length >= 5) { brandTaps = []; openAdminLogin(); return; }
+    if (brandTaps.length >= 3) { brandTaps = []; openAdminLogin(); return; }
     if (screen !== 'home') goMenu(); else window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   $('#adm-login-submit').addEventListener('click', submitAdminLogin);

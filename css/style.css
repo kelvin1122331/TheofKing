@@ -75,12 +75,15 @@ input { font-family: inherit; }
   border-bottom: 1px solid rgba(245, 192, 68, 0.18);
 }
 .topbar-inner { display: flex; align-items: center; gap: 12px; height: 64px; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 .brand-knight {
   display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
   background: linear-gradient(135deg, var(--gold-2), var(--gold) 60%, var(--gold-deep));
   color: #2a1c00; font-size: 26px; box-shadow: 0 6px 18px rgba(245, 192, 68, 0.35);
+  transition: transform 0.12s ease;
 }
+.brand:active .brand-knight { transform: scale(0.86) rotate(-8deg); }
+body { touch-action: manipulation; }
 .brand-text { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: 1px; }
 .brand-text b { color: var(--gold); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
