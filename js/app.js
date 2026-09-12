@@ -2,16 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=10';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=10';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=10';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=10';
-import { Net, peerErrorMessage } from './net.js?v=10';
-import { Game } from './game.js?v=10';
-import { preloadPieces } from './pieces.js?v=10';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=10';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=10';
-import { SKINS, skinById, applySkin } from './skins.js?v=10';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=11';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=11';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=11';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=11';
+import { Net, peerErrorMessage } from './net.js?v=11';
+import { Game } from './game.js?v=11';
+import { preloadPieces } from './pieces.js?v=11';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=11';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=11';
+import { SKINS, skinById, applySkin } from './skins.js?v=11';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;

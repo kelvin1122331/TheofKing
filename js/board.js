@@ -2,7 +2,7 @@
 // Papan catur interaktif: klik + drag & drop, animasi geser,
 // highlight, promosi, koordinat, balik papan.
 // ============================================================
-import { pieceSrc } from './pieces.js?v=10';
+import { pieceSrc } from './pieces.js?v=11';
 
 const FILES = 'abcdefgh';
 

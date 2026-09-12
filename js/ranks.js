@@ -1,7 +1,7 @@
 // ============================================================
 // Sistem Rank TheofKing:
-// Bronze -> Silver -> Gold -> Mythic -> King -> Master
-// Menang +1 bintang, kalah -1 bintang, tiap 5 bintang naik rank.
+// Bronze -> Silver -> Gold -> Mythic -> King -> Master -> Grandmaster
+// Menang +1 bintang, kalah -1 bintang, tiap 5 bintang naik rank (Grandmaster: 500 bintang).
 // ============================================================
 
 export const STARS_PER_RANK = 5;
@@ -13,6 +13,7 @@ export const RANKS = [
   { id: 'mythic', name: 'Mythic', icon: '🔮', min: 15, css: 'linear-gradient(135deg,#c084fc,#6d28d9)' },
   { id: 'king',   name: 'King',   icon: '👑', min: 20, css: 'linear-gradient(135deg,#ffd166,#b57e12)' },
   { id: 'master', name: 'Master', icon: '♛',  min: 25, css: 'linear-gradient(135deg,#7df9ff,#2563eb)' },
+  { id: 'grandmaster', name: 'Grandmaster', icon: '♚', min: 500, css: 'linear-gradient(135deg,#ff0844,#7b2ff7)' },
 ];
 
 export function rankForStars(stars) {
@@ -28,11 +29,13 @@ export function rankForStars(stars) {
 export function rankProgress(stars) {
   const s = Math.max(0, Math.floor(stars || 0));
   const rank = rankForStars(s);
-  if (rank.id === 'master') return { filled: STARS_PER_RANK, total: STARS_PER_RANK, next: null, maxed: true };
+  if (rank.index === RANKS.length - 1) return { filled: STARS_PER_RANK, total: STARS_PER_RANK, next: null, maxed: true };
+  const next = RANKS[rank.index + 1];
+  const span = Math.max(1, next.min - rank.min);
   return {
-    filled: s - rank.min,
+    filled: Math.min(STARS_PER_RANK, Math.floor(((s - rank.min) / span) * STARS_PER_RANK)),
     total: STARS_PER_RANK,
-    next: RANKS[rank.index + 1],
+    next,
     maxed: false,
   };
 }
