@@ -10,6 +10,7 @@ Website game catur dengan tampilan keren bernuansa kerajaan 👑. Bisa dimainkan
 - **🤖 Vs Komputer (offline)** — 3 level AI (Mudah / Sedang / Sulit), pilih warna & kontrol waktu.
 - **👥 Vs Teman (offline)** — main berdua di satu layar.
 - **🌐 Online** — buat room, bagikan **kode 6 digit**, gabung, chat, remis, rematch (peer-to-peer via PeerJS, tanpa server sendiri).
+- **😀 Emote + chat lawan** — kirim emote animasi melayang & pesan di semua mode; bot komputer membalas obrolanmu! 🤖
 - **⭐ Sistem rank & bintang** — menang **+1 ⭐**, kalah **−1 ⭐**, tiap **5 ⭐ naik rank**:
   🥉 Bronze → 🥈 Silver → 🥇 Gold → 🔮 Mythic → 👑 King → ♛ Master.
 - **🔥 Streak kemenangan** — menang beruntun, kalah membuat streak kembali 0.

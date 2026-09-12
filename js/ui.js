@@ -1,11 +1,11 @@
 // ============================================================
 // Helper UI: toast, modal, confetti, avatar, format waktu, dialog.
 // ============================================================
-import { avatarGradientFor, initialsFor } from './store.js?v=31';
-import { rankForStars, rankProgress } from './ranks.js?v=31';
-import { sfx } from './sound.js?v=31';
-import { flagFor } from './countries.js?v=31';
-import { borderImg, borderFx, avatarImg } from './cosmetics.js?v=31';
+import { avatarGradientFor, initialsFor } from './store.js?v=32';
+import { rankForStars, rankProgress } from './ranks.js?v=32';
+import { sfx } from './sound.js?v=32';
+import { flagFor } from './countries.js?v=32';
+import { borderImg, borderFx, avatarImg } from './cosmetics.js?v=32';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -134,6 +134,47 @@ export function borderOverlayHTML(borderId) {
   if (!src) return '';
   const fx = borderFx(borderId);
   return `<span class="ava-frame"><img src="${src}" alt=""${fx ? ` class="${fx}"` : ''} /></span>`;
+}
+
+/** Daftar emote cepat untuk chat game & lobby. */
+export const EMOTE_LIST = ['😀', '😂', '😎', '🔥', '👍', '👏', '😮', '😢', '🤝', '👋', '🙏', '💪', '🎉', '😱', '🤔', '😈', '❤️', '🏆'];
+
+let emotePickerEl = null;
+function closeEmotePicker() {
+  if (emotePickerEl) { emotePickerEl.remove(); emotePickerEl = null; }
+  document.removeEventListener('pointerdown', emoteOutside);
+  document.removeEventListener('keydown', emoteEsc);
+}
+function emoteOutside(e) { if (emotePickerEl && !emotePickerEl.contains(e.target)) closeEmotePicker(); }
+function emoteEsc(e) { if (e.key === 'Escape') closeEmotePicker(); }
+
+/** Popup pilih emote di dekat tombol. onPick(emoji) saat dipilih. */
+export function openEmotePicker(anchor, onPick) {
+  if (emotePickerEl) { closeEmotePicker(); return; }
+  const d = document.createElement('div');
+  d.className = 'emote-picker';
+  d.id = 'emote-picker';
+  for (const e of EMOTE_LIST) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emote-pick';
+    b.textContent = e;
+    b.addEventListener('click', () => { closeEmotePicker(); onPick && onPick(e); });
+    d.appendChild(b);
+  }
+  document.body.appendChild(d);
+  emotePickerEl = d;
+  const r = anchor.getBoundingClientRect();
+  const pw = d.offsetWidth || 230, ph = d.offsetHeight || 180;
+  let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
+  let top = r.top - ph - 8;
+  if (top < 8) top = Math.min(window.innerHeight - ph - 8, r.bottom + 8);
+  d.style.left = left + 'px';
+  d.style.top = Math.max(8, top) + 'px';
+  setTimeout(() => {
+    document.addEventListener('pointerdown', emoteOutside);
+    document.addEventListener('keydown', emoteEsc);
+  }, 0);
 }
 
 /** Lencana verified + gelar owner/admin di belakang nama. */

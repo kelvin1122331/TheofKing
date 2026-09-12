@@ -2,19 +2,20 @@
 // Pengatur permainan: aturan, jam catur, AI, UI papan & panel,
 // rating bintang, chat online, resign/remis/rematch.
 // ============================================================
-import { Chess } from './vendor/chess.js?v=31';
-import { Board } from './board.js?v=31';
-import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=31';
-import { sfx } from './sound.js?v=31';
-import { store, saveStats, pushRecent } from './store.js?v=31';
-import { applyResult, rankForStars } from './ranks.js?v=31';
+import { Chess } from './vendor/chess.js?v=32';
+import { Board } from './board.js?v=32';
+import { chooseMove, evaluateFor, AI_NAMES } from './ai.js?v=32';
+import { sfx } from './sound.js?v=32';
+import { store, saveStats, pushRecent } from './store.js?v=32';
+import { applyResult, rankForStars } from './ranks.js?v=32';
 import {
   $, avatarHTML, fmtClock, toast, openModal, closeModal,
   confettiBurst, esc, confirmDialog, showRankUp, hideRankUp, badgesHTML,
-} from './ui.js?v=31';
-import { pieceSrc } from './pieces.js?v=31';
-import { flagFor } from './countries.js?v=31';
-import { applySkin, skinById } from './skins.js?v=31';
+  openEmotePicker, EMOTE_LIST,
+} from './ui.js?v=32';
+import { pieceSrc } from './pieces.js?v=32';
+import { flagFor } from './countries.js?v=32';
+import { applySkin, skinById } from './skins.js?v=32';
 
 const COLOR_NAME = { w: 'Putih', b: 'Hitam' };
 
@@ -146,6 +147,11 @@ export class Game {
     this.startClockLoop();
     sfx.start();
     this.maybeAiMove();
+    this.botChatAt = 0;
+    this.botCool = { check: 0, capture: 0 };
+    if (this.cfg.mode === 'ai') {
+      this.scheduleBot(() => this.botSay(pick(BOT_GREET)), 1500);
+    }
   }
 
   restartSwap() {
@@ -239,6 +245,7 @@ export class Game {
     this.renderBars();
     this.updateBoardInteractive();
 
+    if (this.cfg.mode === 'ai') this.botReactToMove(move);
     if (this.checkGameOver()) return true;
     this.updateStatus();
     this.maybeAiMove();
@@ -378,6 +385,7 @@ export class Game {
     if (outcome === 'win') { sfx.win(); confettiBurst(200); }
     else if (outcome === 'loss') sfx.lose();
     else sfx.draw();
+    if (this.cfg.mode === 'ai') this.botGameOver(outcome);
 
     // proteksi bintang + rating + koin (bintang hanya dari Ranked & Online)
     const rankedGame = this.cfg.mode === 'online' || !!this.cfg.rankedBot;
@@ -567,6 +575,7 @@ export class Game {
       inp.value = '';
       this.sendChat(text);
     };
+    $('#btn-emote').onclick = () => { sfx.click(); openEmotePicker($('#btn-emote'), (e) => this.sendEmote(e)); };
   }
 
   async onResign() {
@@ -774,6 +783,7 @@ export class Game {
         // (ditinggalkan) kompatibilitas: abaikan
         break;
       case 'chat': this.renderChat(msg, false); break;
+      case 'emote': this.renderChat(msg, false); break;
       case 'ping':
         this.cfg.net?.send({ t: 'pong' });
         break;
@@ -859,33 +869,156 @@ export class Game {
   }
 
   // ============================ chat game ============================
+  localSenderName() {
+    return this.turn() === 'w' ? 'Putih ⬜' : 'Hitam ⬛';
+  }
+
   sendChat(text) {
-    const msg = {
-      t: 'chat', text: String(text).slice(0, 200),
-      from: this.cfg.me.username, name: this.cfg.me.name, ts: Date.now(),
-    };
-    if (this.cfg.net?.send(msg)) {
-      this.renderChat(msg, true);
+    const clean = String(text).slice(0, 200);
+    if (this.cfg.mode === 'online') {
+      const msg = { t: 'chat', text: clean, from: this.cfg.me.username, name: this.cfg.me.name, ts: Date.now() };
+      if (this.cfg.net?.send(msg)) this.renderChat(msg, true);
+      else toast('Gagal mengirim chat: tidak terhubung.', 'error');
+    } else if (this.cfg.mode === 'ai') {
+      this.renderChat({ t: 'chat', text: clean, name: 'Kamu', ts: Date.now() }, true);
+      this.botReplyToChat(clean);
     } else {
-      toast('Gagal mengirim chat: tidak terhubung.', 'error');
+      this.renderChat({ t: 'chat', text: clean, name: this.localSenderName(), ts: Date.now() }, false);
+    }
+    sfx.click();
+  }
+
+  sendEmote(emoji) {
+    if (!EMOTE_LIST.includes(emoji)) return;
+    if (this.cfg.mode === 'online') {
+      const msg = { t: 'emote', emoji, from: this.cfg.me.username, name: this.cfg.me.name, ts: Date.now() };
+      if (this.cfg.net?.send(msg)) this.renderChat(msg, true);
+      else toast('Gagal mengirim emote: tidak terhubung.', 'error');
+    } else if (this.cfg.mode === 'ai') {
+      this.renderChat({ t: 'emote', emoji, name: 'Kamu', ts: Date.now() }, true);
+      this.botReplyToEmote(emoji);
+    } else {
+      const white = this.turn() === 'w';
+      this.renderChat({ t: 'emote', emoji, name: white ? 'Putih ⬜' : 'Hitam ⬛', ts: Date.now() }, white);
     }
     sfx.click();
   }
 
   renderChat(msg, mine) {
     const box = $('#game-chat-messages');
+    if (!box) return;
+    const isEmote = msg && msg.t === 'emote';
     const d = document.createElement('div');
-    d.className = 'chat-msg ' + (mine ? 'me' : 'them');
-    d.innerHTML = `<span class="who">${esc(mine ? 'Kamu' : (msg.name || 'Lawan'))}</span>${esc(msg.text)}`;
+    d.className = 'chat-msg ' + (mine ? 'me' : 'them') + (isEmote ? ' emote' : '');
+    const who = esc(msg.name || (mine ? 'Kamu' : 'Lawan'));
+    d.innerHTML = isEmote
+      ? `<span class="who">${who}</span><span class="emote-big">${esc(msg.emoji || '😀')}</span>`
+      : `<span class="who">${who}</span>${esc(msg.text || '')}`;
     box.appendChild(d);
     box.scrollTop = box.scrollHeight;
-    if (!mine) {
-      sfx.message();
-      if ($('#panel-chat').hidden === false) {
-        // panel terlihat, tidak perlu badge
-      }
+    if (isEmote) this.floatEmote(msg.emoji || '😀', !!mine);
+    if (!mine) sfx.message();
+  }
+
+  floatEmote(emoji, mine) {
+    const layer = $('#emote-float');
+    if (!layer) return;
+    const s = document.createElement('span');
+    s.className = 'float-emote ' + (mine ? 'me' : 'them');
+    s.textContent = emoji;
+    layer.appendChild(s);
+    setTimeout(() => s.remove(), 1700);
+  }
+
+  // ============================ bot ngobrol ============================
+  scheduleBot(fn, delay) {
+    const token = this.moveToken;
+    setTimeout(() => {
+      if (token !== this.moveToken || this.finished || !this.running) return;
+      fn();
+    }, delay);
+  }
+
+  botSay(text) {
+    const now = Date.now();
+    if (now - (this.botChatAt || 0) < 2500) return false;
+    this.botChatAt = now;
+    this.renderChat({ t: 'chat', text, name: this.oppProfile().name, ts: now }, false);
+    return true;
+  }
+
+  botEmote(emoji) {
+    const now = Date.now();
+    if (now - (this.botChatAt || 0) < 2500) return false;
+    this.botChatAt = now;
+    this.renderChat({ t: 'emote', emoji, name: this.oppProfile().name, ts: now }, false);
+    return true;
+  }
+
+  botReplyToChat(text) {
+    this.scheduleBot(() => {
+      if (Math.random() < 0.28) { this.botEmote(pick(BOT_EMOTES)); return; }
+      this.botSay(botReplyFor(text));
+    }, 1100 + Math.random() * 1500);
+  }
+
+  botReplyToEmote(emoji) {
+    const mirror = { '🤝': '🤝', '👋': '👋', '👍': '👍', '🙏': '🙏', '❤️': '❤️', '🔥': '🔥' };
+    this.scheduleBot(() => {
+      this.botEmote(mirror[emoji] || pick(BOT_EMOTES));
+    }, 900 + Math.random() * 1200);
+  }
+
+  botReactToMove(move) {
+    if (this.chess.isCheckmate() || this.chess.isStalemate()) return;
+    const now = Date.now();
+    const myColor = this.cfg.myColor;
+    if (move.color === myColor && this.chess.isCheck()) {
+      if (now - (this.botCool?.check || 0) < 12000) return;
+      this.botCool.check = now;
+      this.scheduleBot(() => this.botSay(pick(BOT_CHECKED)), 800);
+    } else if (move.color !== myColor && move.captured && move.captured !== 'p') {
+      if (now - (this.botCool?.capture || 0) < 20000) return;
+      if (Math.random() < 0.5) return;
+      this.botCool.capture = now;
+      this.scheduleBot(() => this.botSay(pick(BOT_CAPTURE)), 900);
     }
   }
+
+  botGameOver(outcome) {
+    if (outcome === 'win') this.botSay(pick(BOT_LOSE));
+    else if (outcome === 'loss') this.botSay(pick(BOT_WIN));
+    else this.botSay(pick(BOT_DRAW));
+  }
+}
+
+function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+const BOT_GREET = [
+  'Halo! Semoga seru ya! 🤝😀',
+  'Hai! Aku sudah siap, kamu? ⚡',
+  'Selamat bertanding! GL HF! 🤝',
+];
+const BOT_EMOTES = ['😀', '😂', '😎', '🔥', '👍', '👏', '🤔', '💪'];
+const BOT_CHECKED = ['Aduh, skak! 😱', 'Wah, skak! 😮', 'Hati-hati… 😅', 'Skak ya? Tenang… 🤔'];
+const BOT_CAPTURE = ['Dapat! 😎', 'Hehe, makan tuh 😋', 'Buahmu lezat! 😈', 'Tambah koleksi! 😏'];
+const BOT_WIN = ['GG! 😎 Ayo main lagi 💪', 'Hehe, aku menang! 🏆', 'Seru! Lain kali coba lagi 🤝'];
+const BOT_LOSE = ['GG! Kamu hebat! 👏🤝', 'Keren! Aku kalah 🤝🎉', 'Wah, langkahmu bagus! 👍'];
+const BOT_DRAW = ['Seri! 🤝', 'Seimbang! 🤝😀', 'Tidak ada yang kalah! 🎉'];
+const BOT_ANY = [
+  'Hehe 😀', 'Hmm, menarik 🤔', 'Ayo, giliranmu! ⚡', 'Aku mikir dulu ya… 🧠',
+  'Wah, seru nih! 🔥', 'Fokus… fokus… 😤', 'Kamu jago juga! 👏', 'Lanjut! 💪',
+  'Catur itu seni! 🎨', 'Hmm… 🤔', 'Siap-siap ya! 😈',
+];
+function botReplyFor(text) {
+  const t = String(text || '').toLowerCase();
+  if (/(halo|hai|hello|hei|pagi|sore|malam|assalamu)/.test(t)) return pick(['Halo juga! 😀', 'Hai hai! 👋😀', 'Halo! Siap kalah? 😈']);
+  if (/(gg|bagus|hebat|keren|mantap|jago)/.test(t)) return pick(['Makasih! 🙏😀', 'Kamu juga hebat! 👏', 'Hehe, makasih! 😎']);
+  if (/(kalah|sedih|ampun|menyerah|susah|sulit)/.test(t)) return pick(['Semangat! 💪', 'Jangan menyerah! 🔥', 'Ayo bisa! 💪😀']);
+  if (/(siapa|nama|bot|robot|komputer)/.test(t)) return pick(['Aku bot catur TheofKing! 🤖👑', 'Aku lawan mainmu! 🤖⚡']);
+  if (/(remis|seri|draw)/.test(t)) return pick(['Boleh, ajukan saja! 🤝', 'Hmm, main dulu… 🤔']);
+  if (/\?/.test(t)) return pick(['Hmm, kurang tahu… 🤔', 'Mungkin! 😀', 'Tanya bidak saja! 😂']);
+  return pick(BOT_ANY);
 }
 
 /** Bekukan info lawan untuk riwayat (tahan rename/ganti avatar di kemudian hari). */

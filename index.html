@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=31" />
+  <link rel="stylesheet" href="css/style.css?v=32" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -237,6 +237,7 @@
           <h3>💬 Chat Lobby</h3>
           <div class="chat-messages" id="lobby-chat-messages"></div>
           <form class="chat-form" id="lobby-chat-form">
+            <button type="button" class="btn btn-outline btn-sm btn-emote" id="lobby-emote-btn" title="Kirim emote">😀</button>
             <input id="lobby-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
             <button type="submit" class="btn btn-gold btn-sm">➤</button>
           </form>
@@ -246,6 +247,7 @@
 
     <!-- ============ GAME ============ -->
     <section id="screen-game" hidden>
+      <div id="emote-float" aria-hidden="true"></div>
       <div class="game-layout">
         <div class="board-col">
           <div class="player-bar" id="player-top"></div>
@@ -253,8 +255,8 @@
             <div id="board" class="board skin-wood"></div>
             <div class="board-fx" id="board-fx" aria-hidden="true">
               <div class="dragon-fly"><div class="dragon-inner">
-                <img class="dragon-img" src="assets/fx/dragon.png?v=31" alt="" draggable="false" />
-                <img class="dragon-fire" src="assets/fx/fire.png?v=31" alt="" draggable="false" />
+                <img class="dragon-img" src="assets/fx/dragon.png?v=32" alt="" draggable="false" />
+                <img class="dragon-fire" src="assets/fx/fire.png?v=32" alt="" draggable="false" />
               </div></div>
               <span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span><span class="ember e4"></span>
             </div>
@@ -284,6 +286,7 @@
             <h3>💬 Chat Lawan <span id="chat-badge" class="badge" hidden>0</span></h3>
             <div class="chat-messages" id="game-chat-messages"></div>
             <form class="chat-form" id="game-chat-form">
+              <button type="button" class="btn btn-outline btn-sm btn-emote" id="btn-emote" title="Kirim emote">😀</button>
               <input id="game-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
               <button type="submit" class="btn btn-gold btn-sm">➤</button>
             </form>
@@ -774,7 +777,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=31"></script>
-  <script type="module" src="js/app.js?v=31"></script>
+  <script src="js/vendor/peerjs.min.js?v=32"></script>
+  <script type="module" src="js/app.js?v=32"></script>
 </body>
 </html>

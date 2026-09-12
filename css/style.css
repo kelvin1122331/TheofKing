@@ -299,6 +299,39 @@ body { touch-action: manipulation; }
 .chat-msg.me { align-self: flex-end; background: linear-gradient(135deg, #8a5f0e, #b57e12); border-bottom-right-radius: 4px; }
 .chat-msg.them { align-self: flex-start; background: rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
 .chat-msg.sys { align-self: center; background: transparent; color: var(--muted); font-size: 0.75rem; font-style: italic; }
+
+/* ---------- emote chat ---------- */
+.btn-emote { font-size: 1.05rem; padding-left: 10px; padding-right: 10px; }
+.emote-picker {
+  position: fixed; z-index: 200; display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 2px; padding: 8px; max-width: 240px;
+  background: linear-gradient(160deg, #2a1f0d, #14100a);
+  border: 1px solid rgba(255, 215, 0, 0.35); border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  animation: emote-pop 0.15s ease-out;
+}
+@keyframes emote-pop { from { transform: scale(0.85); opacity: 0; } }
+.emote-pick {
+  background: transparent; border: 0; border-radius: 9px; font-size: 1.4rem;
+  padding: 5px 2px; cursor: pointer; line-height: 1; transition: transform 0.1s;
+}
+.emote-pick:hover { background: rgba(255, 215, 0, 0.15); transform: scale(1.25); }
+.chat-msg.emote { background: transparent; border: 0; padding: 2px 6px; }
+.chat-msg.emote .emote-big { font-size: 2.1rem; line-height: 1.2; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+#screen-game { position: relative; }
+#emote-float { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 40; }
+.float-emote {
+  position: absolute; font-size: 3rem; line-height: 1;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+  animation: float-up 1.6s ease-out forwards;
+}
+.float-emote.me { left: 50%; bottom: 24%; }
+.float-emote.them { left: 50%; top: 14%; }
+@keyframes float-up {
+  0% { transform: translateX(-50%) translateY(16px) scale(0.5); opacity: 0; }
+  18% { transform: translateX(-50%) translateY(0) scale(1.2); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-90px) scale(1); opacity: 0; }
+}
 .chat-form { display: flex; gap: 8px; margin-top: 10px; }
 .chat-form input {
   flex: 1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.14);

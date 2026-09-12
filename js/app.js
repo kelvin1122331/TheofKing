@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=31';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=31';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=31';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst } from './ui.js?v=31';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=31';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=31';
-import { Game } from './game.js?v=31';
-import { preloadPieces } from './pieces.js?v=31';
-import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=31';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=31';
-import { SKINS, skinById, applySkin } from './skins.js?v=31';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=31';
+import { store, saveStats, validateProfile, findLocalNameClash, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=32';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=32';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=32';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML, badgesHTML, borderOverlayHTML, confettiBurst, openEmotePicker } from './ui.js?v=32';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=32';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=32';
+import { Game } from './game.js?v=32';
+import { preloadPieces } from './pieces.js?v=32';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=32';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=32';
+import { SKINS, skinById, applySkin } from './skins.js?v=32';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=32';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -57,6 +57,7 @@ function showScreen(name) {
 
 function cleanupGame() {
   if (game) { game.destroy(); game = null; }
+  window.__TOK_GAME__ = null;
   closeModal('modal-result');
   $('#game-chat-messages').innerHTML = '';
   $('#game-chat-input').value = '';
@@ -594,9 +595,11 @@ async function startOfflineGame() {
     oppStreak: 0,
   });
   cleanupGame();
-  $('#panel-chat').hidden = true;
+  $('#panel-chat').hidden = false;
+  $('#game-chat-messages').innerHTML = '';
   showScreen('game');
   game = new Game(cfg, { onMenu: goMenu });
+  window.__TOK_GAME__ = game;
   game.start();
   toast(cfg.mode === 'ai' ? `Melawan ${game.oppProfile().name}! Semangat! ⚔️` : 'Selamat bertanding! 🤝', 'gold');
 }
@@ -818,9 +821,11 @@ async function startRankedBotGame(bot, diff) {
     oppStreak: bot.streak || 0,
   });
   cleanupGame();
-  $('#panel-chat').hidden = true;
+  $('#panel-chat').hidden = false;
+  $('#game-chat-messages').innerHTML = '';
   showScreen('game');
   game = new Game(cfg, { onMenu: goMenu });
+  window.__TOK_GAME__ = game;
   game.start();
   toast(`Lawan ditemukan: ${bot.name}! Semangat! ⚔️`, 'gold');
 }
@@ -1176,11 +1181,23 @@ function sysChat(text) {
 function lobbyChatRender(msg, mine) {
   const box = $('#lobby-chat-messages');
   const d = document.createElement('div');
-  d.className = 'chat-msg ' + (mine ? 'me' : 'them');
-  d.innerHTML = `<span class="who">${esc(mine ? 'Kamu' : (msg.name || 'Lawan'))}</span>${esc(msg.text)}`;
+  const isEmote = msg && msg.t === 'emote';
+  d.className = 'chat-msg ' + (mine ? 'me' : 'them') + (isEmote ? ' emote' : '');
+  d.innerHTML = isEmote
+    ? `<span class="who">${esc(mine ? 'Kamu' : (msg.name || 'Lawan'))}</span><span class="emote-big">${esc(msg.emoji || '😀')}</span>`
+    : `<span class="who">${esc(mine ? 'Kamu' : (msg.name || 'Lawan'))}</span>${esc(msg.text)}`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
   if (!mine) sfx.message();
+}
+
+function sendLobbyEmote(emoji) {
+  if (!net) return;
+  const me = currentProfile();
+  const msg = { t: 'emote', emoji, from: me.username, name: me.name, ts: Date.now() };
+  if (net.send(msg)) lobbyChatRender(msg, true);
+  else toast('Belum terhubung ke lawan.', 'error');
+  sfx.click();
 }
 
 function onLobbyNetData(msg) {
@@ -1205,6 +1222,7 @@ function onLobbyNetData(msg) {
         renderLobby();
         break;
       case 'chat': lobbyChatRender(msg, false); break;
+      case 'emote': lobbyChatRender(msg, false); break;
       case 'ping': net.send({ t: 'pong' }); break;
       default: break;
     }
@@ -1219,6 +1237,7 @@ function onLobbyNetData(msg) {
         goMenu();
         break;
       case 'chat': lobbyChatRender(msg, false); break;
+      case 'emote': lobbyChatRender(msg, false); break;
       case 'ping': net.send({ t: 'pong' }); break;
       default: break;
     }
@@ -1305,6 +1324,7 @@ async function startOnlineGame() {
   $('#game-chat-messages').innerHTML = '';
   showScreen('game');
   game = new Game(cfg, { onMenu: goMenu });
+  window.__TOK_GAME__ = game;
   game.start();
   toast('Pertandingan dimulai! ⚔️', 'gold');
 }
@@ -1337,6 +1357,10 @@ function initLobby() {
       else net.send({ t: 'leave' });
     }
     goMenu();
+  });
+  $('#lobby-emote-btn').addEventListener('click', () => {
+    sfx.click();
+    openEmotePicker($('#lobby-emote-btn'), (e) => sendLobbyEmote(e));
   });
   $('#lobby-chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
