@@ -1252,7 +1252,7 @@ body { touch-action: manipulation; }
   0%, 100% { translate: 0 0; }
   50% { translate: 0 -10px; }
 }
-.dragon-img, .dragon-fire { display: block; width: 100%; mix-blend-mode: screen; }
+.dragon-img, .dragon-fire { display: block; width: 100%; }
 .dragon-fire {
   position: absolute; left: -72%; top: 6%; width: 95%;
   transform-origin: right center; opacity: 0;
