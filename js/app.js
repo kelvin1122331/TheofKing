@@ -2,16 +2,17 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=14';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=14';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=14';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=14';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=14';
-import { Game } from './game.js?v=14';
-import { preloadPieces } from './pieces.js?v=14';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=14';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=14';
-import { SKINS, skinById, applySkin } from './skins.js?v=14';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=15';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=15';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=15';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=15';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=15';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=15';
+import { Game } from './game.js?v=15';
+import { preloadPieces } from './pieces.js?v=15';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=15';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=15';
+import { SKINS, skinById, applySkin } from './skins.js?v=15';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -293,6 +294,7 @@ function initOnboarding() {
     sfx.start();
     toast(`Selamat datang, ${v.name}! 👑`, 'gold');
     refreshStats();
+    linkAccount();
   });
 }
 
@@ -342,6 +344,7 @@ function initProfileModal() {
     sfx.notify();
     toast('Profil disimpan! 💾', 'success');
     refreshStats();
+    schedulePush();
   });
   $('#pf-copy-id').addEventListener('click', async () => {
     sfx.click();
@@ -369,9 +372,7 @@ function openLeaderboard() {
   openModal('modal-leaderboard');
 }
 
-function renderLeaderboard() {
-  $$('#modal-leaderboard .tab').forEach((t) => t.classList.toggle('active', t.dataset.lbtab === lbTab));
-  const rows = getLeaderboard(lbTab);
+function paintLeaderboard(rows, meRank) {
   const medal = (pos) => (pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`);
   $('#lb-list').innerHTML = rows.map((r) => `
     <div class="lb-row ${r.me ? 'me' : ''}">
@@ -381,8 +382,24 @@ function renderLeaderboard() {
       <span class="u">@${esc(r.username)} • ${r.rank.icon} ${r.rank.name}</span></span>
       <span class="score">${lbTab === 'stars' ? '⭐ ' + r.stars : '🔥 ' + r.streak}</span>
     </div>`).join('');
-  const me = myGlobalRank(lbTab);
-  $('#lb-me').innerHTML = me ? `Peringkatmu: <b>#${me}</b> dari ${rows.length} pemain 🌍` : '';
+  $('#lb-me').innerHTML = meRank ? `Peringkatmu: <b>#${meRank}</b> dari ${rows.length} pemain 🌍` : '';
+}
+
+function renderLeaderboard() {
+  $$('#modal-leaderboard .tab').forEach((t) => t.classList.toggle('active', t.dataset.lbtab === lbTab));
+  paintLeaderboard(getLeaderboard(lbTab), myGlobalRank(lbTab));
+  if (isServerOnline()) {
+    const tab = lbTab;
+    Server.leaderboard(tab, currentProfile()?.id).then((lb) => {
+      if (tab !== lbTab || document.getElementById('modal-leaderboard').hidden) return;
+      const myId = currentProfile()?.id;
+      paintLeaderboard(lb.players.map((x, i) => ({
+        id: x.id, name: x.name, username: x.username, avatar: x.avatar, bot: false,
+        me: !!myId && x.id === myId, country: x.country || null,
+        stars: x.stars, streak: x.streak, rank: rankForStars(x.stars), pos: i + 1,
+      })), lb.meRank);
+    }).catch(() => { /* tetap tampilkan lokal */ });
+  }
 }
 
 // ------------------------- mode & konfigurasi -------------------------
@@ -541,6 +558,106 @@ async function startOfflineGame() {
   toast(cfg.mode === 'ai' ? `Melawan ${game.oppProfile().name}! Semangat! ⚔️` : 'Selamat bertanding! 🤝', 'gold');
 }
 
+// ------------------------- server: sinkron -------------------------
+let pushTimer = null, pushing = false, readonlyWarned = false;
+
+function paintServerStatus() {
+  const el = document.getElementById('server-status');
+  if (el) el.textContent = isServerOnline() ? '🟢 Server' : '⚪ Offline';
+}
+
+async function initServerLink() {
+  paintServerStatus();
+  const ok = await checkServer();
+  paintServerStatus();
+  if (ok) linkAccount();
+}
+
+async function linkAccount() {
+  const p = currentProfile();
+  if (!p?.id) return;
+  try {
+    const { account } = await Server.pull(p.id);
+    const localRev = store.stats._rev || 0;
+    if ((account.rev || 0) > localRev) {
+      applyServerAccount(account);
+      toast('Data disinkron dari server 🌐', 'gold');
+    } else if (localRev > (account.rev || 0)) {
+      schedulePush();
+    }
+  } catch (e) {
+    if (e.code === 404 && !isServerReadonly()) {
+      try {
+        await Server.register({ id: p.id, username: p.username, name: p.name, avatar: p.avatar, country: p.country });
+        schedulePush();
+      } catch (e2) {
+        if (e2.code === 409) {
+          setServerReadonly(true);
+          if (!readonlyWarned) { readonlyWarned = true; toast('Username dipakai akun lain di server ⚠️', 'error'); }
+        }
+      }
+    }
+  }
+}
+
+async function pullAccount() {
+  const p = currentProfile();
+  if (!p?.id || !isServerOnline()) return;
+  try {
+    const { account } = await Server.pull(p.id);
+    if ((account.rev || 0) > (store.stats._rev || 0)) applyServerAccount(account);
+  } catch { /* abaikan */ }
+}
+
+function applyServerAccount(a) {
+  store.profile = { id: a.id, username: a.username, name: a.name, avatar: a.avatar, country: a.country, createdAt: store.profile?.createdAt || Date.now() };
+  store.stats = { ...a.stats, _rev: a.rev || 0 };
+  const s = store.settings;
+  if (a.settings?.skin) s.skin = a.settings.skin;
+  if (Array.isArray(a.settings?.skins)) s.skins = a.settings.skins;
+  store.settings = s;
+  store.friends = Array.isArray(a.friends) ? a.friends : [];
+  refreshStats();
+  applyEquippedSkin();
+}
+
+function schedulePush() {
+  if (!isServerOnline() || isServerReadonly()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushAccount, 1500);
+}
+
+async function pushAccount() {
+  if (!isServerOnline() || isServerReadonly() || pushing) return;
+  const p = currentProfile();
+  if (!p?.id) return;
+  pushing = true;
+  try {
+    const st = store.stats;
+    const rev = (st._rev || 0) + 1;
+    const set = store.settings;
+    const { account } = await Server.push(p.id, {
+      profile: { name: p.name, username: p.username, avatar: p.avatar, country: p.country },
+      stats: { ...st },
+      settings: { skin: set.skin, skins: set.skins },
+      friends: store.friends,
+      rev,
+    });
+    const cur = store.stats;
+    cur._rev = account.rev;
+    store.stats = cur;
+  } catch (e) {
+    if (e.code === 409 && e.account) {
+      const cur = store.stats;
+      if ((e.account.rev || 0) > (cur._rev || 0)) applyServerAccount(e.account);
+    } else if (e.code === 409) {
+      setServerReadonly(true); // username bentrok
+    }
+  } finally {
+    pushing = false;
+  }
+}
+
 // ------------------------- arena: matchmaking -------------------------
 const ARENA_TIME = { ms: 300000, inc: 0, label: '5 mnt' };
 let arena = null; // { active, round, fullOffset, startedAt, elapsedTimer, bucketWatch, bucket }
@@ -565,6 +682,8 @@ function endArenaSearch() {
   arena.active = false;
   clearInterval(arena.elapsedTimer);
   clearInterval(arena.bucketWatch);
+  clearTimeout(arena.serverFallbackT);
+  if (arenaSocket) { try { arenaSocket.close(); } catch { /* abaikan */ } arenaSocket = null; }
   arena = null;
 }
 
@@ -594,6 +713,7 @@ async function startArenaSearch() {
     toast('Butuh internet untuk Arena. Periksa koneksi lalu coba lagi 📶', 'error');
     return;
   }
+  if (isServerOnline()) { startArenaServer(); return; }
   const r = rankForStars(store.stats.stars || 0);
   arena = { active: true, round: 0, fullOffset: 0, startedAt: Date.now(), bucket: Math.floor(Date.now() / ARENA_BUCKET_MS) };
   document.getElementById('arena-rank').innerHTML = `${r.icon} <b>${r.name}</b> • ⭐ ${store.stats.stars || 0}`;
@@ -602,7 +722,7 @@ async function startArenaSearch() {
   openModal('modal-arena');
   arena.elapsedTimer = setInterval(updateArenaElapsed, 1000);
   arena.bucketWatch = setInterval(() => {
-    if (!arena?.active || lobby?.started || game) return;
+    if (!arena?.active || arena.server || lobby?.started || game) return;
     const matched = lobby && (lobby.isHost ? !!lobby.guest : true);
     if (matched) return;
     if (Math.floor(Date.now() / ARENA_BUCKET_MS) !== arena.bucket) {
@@ -614,19 +734,102 @@ async function startArenaSearch() {
 }
 
 /** Satu ronde: coba gabung bucket arena; kalau kosong, jadi host. */
+let arenaSocket = null;
+
+async function startArenaServer() {
+  const me = currentProfile();
+  const r = rankForStars(store.stats.stars || 0);
+  arena = { active: true, round: 0, fullOffset: 0, startedAt: Date.now(), bucket: Math.floor(Date.now() / ARENA_BUCKET_MS), server: true, matched: false };
+  document.getElementById('arena-rank').innerHTML = `${r.icon} <b>${r.name}</b> • ⭐ ${store.stats.stars || 0}`;
+  setArenaStatus('Menghubungi server…');
+  document.getElementById('arena-elapsed').textContent = '⏱️ 0 dtk';
+  openModal('modal-arena');
+  arena.elapsedTimer = setInterval(updateArenaElapsed, 1000);
+  arena.bucketWatch = setInterval(() => {
+    if (!arena?.active || arena.server || lobby?.started || game) return;
+    const matched = lobby && (lobby.isHost ? !!lobby.guest : true);
+    if (matched) return;
+    if (Math.floor(Date.now() / ARENA_BUCKET_MS) !== arena.bucket) {
+      arena.bucket = Math.floor(Date.now() / ARENA_BUCKET_MS);
+      searchArenaRound();
+    }
+  }, 3000);
+  const ws = openMatchSocket();
+  if (!ws) { searchArenaRound(); return; }
+  arenaSocket = ws;
+  let matched = false;
+  const queueMsg = () => JSON.stringify({ t: 'queue', id: me.id, rank: r.id, profile: { id: me.id, name: me.name, username: me.username, avatar: me.avatar, country: me.country || null }, stats: snapshotStats() });
+  ws.onopen = () => {
+    if (!arena?.active) { try { ws.close(); } catch { /* abaikan */ } return; }
+    try { ws.send(queueMsg()); } catch { /* abaikan */ }
+    setArenaStatus('Antre di server…');
+  };
+  ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (!arena?.active || matched) return;
+    if (msg.t === 'queued') {
+      setArenaStatus(`Antre #${msg.position} • ${r.icon} ${r.name}…`);
+    } else if (msg.t === 'matched') {
+      matched = true;
+      arena.matched = true;
+      const round = ++arena.round;
+      try { ws.send(JSON.stringify({ t: 'started', code: msg.code })); } catch { /* abaikan */ }
+      setTimeout(() => { try { ws.close(); } catch { /* abaikan */ } if (arenaSocket === ws) arenaSocket = null; }, 500);
+      setArenaStatus(`Lawan: ${msg.opp?.profile?.name || '???'}! Menghubungkan…`);
+      if (msg.role === 'host') {
+        arena.serverFallbackT = setTimeout(() => {
+          if (arena?.active && arena.server && !lobby?.guest && !lobby?.started && !game) {
+            toast('Tamu tak datang, cari lokal… 📶', 'error');
+            searchArenaRound();
+          }
+        }, 45000);
+        hostArenaBucket(msg.code, round);
+      } else {
+        guestArenaJoin(msg.code, round);
+      }
+    } else if (msg.t === 'opp_gone' || msg.t === 'expired') {
+      setArenaStatus('Antre lagi di server…');
+      try { if (ws.readyState === 1) ws.send(queueMsg()); } catch { /* abaikan */ }
+    }
+  };
+  const failToLegacy = () => {
+    if (!arena?.active || matched) return;
+    matched = true;
+    try { ws.close(); } catch { /* abaikan */ }
+    if (arenaSocket === ws) arenaSocket = null;
+    setArenaStatus('Server sibuk, cari lokal…');
+    searchArenaRound();
+  };
+  ws.onerror = () => failToLegacy();
+  ws.onclose = () => { if (arenaSocket === ws) arenaSocket = null; failToLegacy(); };
+}
+
+/** Satu ronde legacy: coba gabung bucket; kalau kosong, jadi host. */
 async function searchArenaRound() {
   if (!arena?.active) return;
   const round = ++arena.round;
-  const alive = () => arena?.active && arena.round === round;
-  cleanupNet();
+  arena.server = false;
+  arena.matched = false;
   const code = arenaCodeFor(myRankId(), Date.now() + arena.fullOffset * ARENA_BUCKET_MS);
   setArenaStatus(arena.fullOffset > 0 ? 'Arena penuh, cari slot lain…' : 'Mencari lawan se-rank…');
+  guestArenaJoin(code, round);
+}
+
+/** Gabung kode arena sebagai tamu + handshake (dipakai legacy & server). */
+async function guestArenaJoin(code, round) {
+  const alive = () => arena?.active && arena.round === round;
+  cleanupNet();
   net = new Net();
   try {
     await net.join(code);
   } catch (err) {
     if (!alive()) return;
-    if (err?.type === 'peer-unavailable') { hostArenaBucket(code, round); return; }
+    if (err?.type === 'peer-unavailable') {
+      if (arena.server) { searchArenaRound(); return; } // host server hilang → legacy
+      hostArenaBucket(code, round);
+      return;
+    }
     arenaFail(err?.message === 'TIMEOUT' ? 'Koneksi timeout. Coba lagi.' : peerErrorMessage(err));
     return;
   }
@@ -660,8 +863,8 @@ async function searchArenaRound() {
   } catch (err) {
     if (!alive()) return;
     if (err?.message === 'FULL' || err?.message === 'CLOSED') {
-      arena.fullOffset++;
-      searchArenaRound();
+      if (arena.server) { searchArenaRound(); } // slot server bermasalah → legacy
+      else { arena.fullOffset++; searchArenaRound(); }
       return;
     }
     arenaFail(err?.message === 'TIMEOUT' ? 'Host tidak menjawab. Coba lagi.' : peerErrorMessage(err));
@@ -859,6 +1062,7 @@ function onLobbyNetData(msg) {
   if (lobby.isHost) {
     switch (msg.t) {
       case 'join':
+        if (arena?.serverFallbackT) { clearTimeout(arena.serverFallbackT); arena.serverFallbackT = null; }
         lobby.guest = { profile: msg.profile, stats: msg.stats };
         net.send({ t: 'welcome', profile: lobby.host.profile, stats: lobby.host.stats, config: lobby.config });
         sfx.notify();
@@ -1048,9 +1252,21 @@ function renderFriends() {
   updateFriendsBadge();
 }
 
-function submitAddFriend() {
+async function submitAddFriend() {
   const er = document.getElementById('fr-error');
-  const r = addFriend(document.getElementById('fr-username').value, document.getElementById('fr-id').value, currentProfile()?.id);
+  const uname = document.getElementById('fr-username').value;
+  const fid = document.getElementById('fr-id').value;
+  if (isServerOnline()) {
+    try {
+      const { account } = await Server.find((fid || '').trim() || uname);
+      const uu = uname.trim().replace(/^@/, '').toLowerCase();
+      if (uu && (fid || '').trim() && account.username.toLowerCase() !== uu) throw new Error('MISMATCH');
+    } catch {
+      er.textContent = 'Akun tidak terdaftar di server 🔍';
+      er.hidden = false; sfx.illegal(); return;
+    }
+  }
+  const r = addFriend(uname, fid, currentProfile()?.id);
   if (!r.ok) { er.textContent = r.message; er.hidden = false; sfx.illegal(); return; }
   er.hidden = true;
   document.getElementById('fr-username').value = '';
@@ -1058,6 +1274,7 @@ function submitAddFriend() {
   sfx.buy();
   toast(`@${r.username} jadi temanmu! 👥`, 'success');
   renderFriends();
+  schedulePush();
 }
 
 // ------------------------- admin -------------------------
@@ -1065,6 +1282,8 @@ const ADMIN_USER = 'admintheo5757';
 const ADMIN_PASS = 'theofkingsid';
 let brandTaps = [];
 let isAdmin = false;
+let adminToken = null;
+let admTargetSeq = 0;
 const adminLog = [];
 
 function openAdminLogin() {
@@ -1073,12 +1292,16 @@ function openAdminLogin() {
   openModal('modal-admin-login');
 }
 
-function submitAdminLogin() {
+async function submitAdminLogin() {
   const u = document.getElementById('adm-user').value.trim();
   const pw = document.getElementById('adm-pass').value;
   const er = document.getElementById('adm-error');
   if (u === ADMIN_USER && pw === ADMIN_PASS) {
     isAdmin = true;
+    adminToken = null;
+    if (isServerOnline()) {
+      try { const r = await Server.adminLogin(u, pw); adminToken = r.token; } catch { /* mode lokal */ }
+    }
     document.getElementById('adm-user').value = '';
     document.getElementById('adm-pass').value = '';
     er.hidden = true;
@@ -1101,6 +1324,7 @@ function openAdminPanel() {
     openModal('modal-onboarding');
     return;
   }
+  document.getElementById('adm-mode').textContent = (isServerOnline() && adminToken) ? '🌐 Mode Server — semua pemain' : '📴 Mode Lokal — perangkat ini';
   renderAdminTarget();
   renderAdminLog();
   openModal('modal-admin');
@@ -1114,13 +1338,30 @@ function resolveAdminTarget() {
   return null;
 }
 
-function renderAdminTarget() {
-  const t = resolveAdminTarget();
+async function resolveAdminTargetAsync() {
+  const q = document.getElementById('adm-target').value.trim().replace(/^@/, '');
+  if (!q) return null;
+  if (isServerOnline() && adminToken) {
+    try {
+      const { account } = await Server.adminFind(adminToken, q);
+      return { server: true, name: account.name, username: account.username, id: account.id, stars: account.stats.stars };
+    } catch { return null; }
+  }
+  return resolveAdminTarget();
+}
+
+async function renderAdminTarget() {
   const box = document.getElementById('adm-target-info');
+  const hint = `🔍 Ketik ID / username akun${(isServerOnline() && adminToken) ? '' : ' <b>di perangkat ini</b>'}.`;
+  const q = document.getElementById('adm-target').value.trim();
+  if (!q) { box.innerHTML = hint; return; }
+  const seq = ++admTargetSeq;
+  const t = await resolveAdminTargetAsync();
+  if (seq !== admTargetSeq || document.getElementById('adm-target').value.trim() !== q) return;
   if (t) {
-    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})<br>⭐ saat ini: <b>${store.stats.stars || 0}</b>`;
+    box.innerHTML = `✅ Target: <b>${esc(t.name)}</b> (@${esc(t.username)} • ${esc(t.id || '–')})${t.server ? ' 🌐' : ''}<br>⭐ saat ini: <b>${t.server ? t.stars : (store.stats.stars || 0)}</b>`;
   } else {
-    box.innerHTML = `🔍 Ketik ID / username akun <b>di perangkat ini</b>.`;
+    box.innerHTML = hint;
   }
 }
 
@@ -1130,10 +1371,11 @@ function renderAdminLog() {
     : '<div class="muted">Belum ada perubahan.</div>';
 }
 
-function applyAdminStars(mode) {
-  const t = resolveAdminTarget();
+async function applyAdminStars(mode) {
+  const t = await resolveAdminTargetAsync();
   const er = document.getElementById('adm-error2');
-  if (!t) { er.textContent = 'Akun tidak ditemukan di perangkat ini 🔍'; er.hidden = false; sfx.illegal(); return; }
+  const scope = (isServerOnline() && adminToken) ? 'di server' : 'di perangkat ini';
+  if (!t) { er.textContent = `Akun tidak ditemukan ${scope} 🔍`; er.hidden = false; sfx.illegal(); return; }
   const n = Math.floor(Number(document.getElementById('adm-amount').value));
   const lo = mode === 'set' ? 0 : 1;
   if (!Number.isFinite(n) || n < lo || n > 99999) {
@@ -1141,6 +1383,21 @@ function applyAdminStars(mode) {
     er.hidden = false; sfx.illegal(); return;
   }
   er.hidden = true;
+  if (t.server && adminToken) {
+    try {
+      const r = await Server.adminStars(adminToken, document.getElementById('adm-target').value.trim(), mode, n);
+      adminLog.unshift(`${mode === 'set' ? '🎯' : '➕'} @${r.account.username}: ${r.before} → ${r.after} ⭐ 🌐`);
+      if (r.account.id === currentProfile()?.id) pullAccount();
+      renderAdminTarget();
+      renderAdminLog();
+      sfx.buy();
+      toast(mode === 'set' ? `Bintang @${r.account.username} jadi ${r.after}! 🎯` : `+${n} ⭐ untuk @${r.account.username}!`, 'success');
+    } catch (e2) {
+      er.textContent = e2.code === 404 ? 'Akun tidak ditemukan di server 🔍' : 'Server sibuk, coba lagi.';
+      er.hidden = false; sfx.illegal();
+    }
+    return;
+  }
   const st = store.stats;
   const before = st.stars || 0;
   st.stars = mode === 'set' ? n : before + n;
@@ -1155,6 +1412,7 @@ function applyAdminStars(mode) {
 
 function adminLogout() {
   isAdmin = false;
+  adminToken = null;
   closeModal('modal-admin');
   sfx.click();
   toast('Admin keluar 🔒', 'gold');
@@ -1255,6 +1513,7 @@ function equipSkin(id) {
   }
   sfx.click();
   renderShop();
+  document.dispatchEvent(new CustomEvent('tok:stats')); // sinkron skin
 }
 
 // ------------------------- init -------------------------
@@ -1338,6 +1597,7 @@ function init() {
       sfx.click();
       toast('Teman dihapus.', 'gold');
       renderFriends();
+      schedulePush();
     } else if (cp) {
       if (await copyText(cp.dataset.frCopy)) toast('ID teman disalin! 📋', 'success');
     }
@@ -1373,15 +1633,20 @@ function init() {
   });
 
   // refresh saat stats berubah
-  document.addEventListener('tok:stats', refreshStats);
+  document.addEventListener('tok:stats', () => { refreshStats(); schedulePush(); });
 
   // peringatan keluar saat game online
   addEventListener('beforeunload', (e) => {
     if (game && game.cfg.mode === 'online' && !game.finished) e.preventDefault();
   });
 
+  try {
+    const q = new URLSearchParams(location.search).get('server');
+    if (q && /^https?:\/\//.test(q)) localStorage.setItem('tok.v1.server', q.replace(/\/+$/, ''));
+  } catch { /* abaikan */ }
   ensureProfileId();
   refreshStats();
+  initServerLink();
 
   // wajib isi profil saat pertama masuk
   if (!currentProfile()) {

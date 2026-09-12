@@ -870,3 +870,5 @@ body { touch-action: manipulation; }
   font-size: 0.82rem; max-height: 120px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 3px;
 }
+
+.server-status { font-size: 0.8rem; opacity: 0.9; white-space: nowrap; }
