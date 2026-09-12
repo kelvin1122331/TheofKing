@@ -60,4 +60,6 @@ Lalu buka `http://localhost:8080`.
 - Aturan & validasi: [chess.js](https://github.com/jhlywa/chess.js) (BSD-2-Clause).
 - Jaringan P2P: [PeerJS](https://peerjs.com/) (MIT).
 
+👑 Owner: **mahendra** • 🤝 Sponsor: **tokogameid**
+
 Dibuat dengan ♞ oleh **TheofKing**.
