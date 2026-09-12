@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>TheofKing — Main Catur Online &amp; Offline</title>
+  <meta name="description" content="TheofKing: game catur online & offline dengan sistem rank Bronze → Master, bintang, streak kemenangan, dan global leaderboard." />
+  <meta name="theme-color" content="#0b0e17" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <span class="float-piece" style="--x:6vw;  --d:0s;  --s:44px;">♞</span>
+    <span class="float-piece" style="--x:88vw; --d:2s;  --s:60px;">♜</span>
+    <span class="float-piece" style="--x:14vw; --d:5s;  --s:34px;">♝</span>
+    <span class="float-piece" style="--x:78vw; --d:7s;  --s:40px;">♛</span>
+    <span class="float-piece" style="--x:30vw; --d:3s;  --s:30px;">♟</span>
+    <span class="float-piece" style="--x:65vw; --d:9s;  --s:36px;">♚</span>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#" id="brand-home" title="TheofKing">
+        <span class="brand-knight">♞</span>
+        <span class="brand-text">Theof<b>King</b></span>
+      </a>
+      <div class="topbar-actions">
+        <button id="btn-sound" class="icon-btn" title="Suara on/off">🔊</button>
+        <button id="btn-theme" class="icon-btn" title="Ganti tema papan">🎨</button>
+        <button id="btn-leaderboard" class="btn btn-ghost hide-sm">🏆 Rank Global</button>
+        <button id="btn-help" class="icon-btn" title="Cara bermain">❓</button>
+        <button id="profile-chip" class="profile-chip" title="Profil saya"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ============ HOME ============ -->
+    <section id="screen-home">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-badge">♞ GAME CATUR INDONESIA ♞</div>
+          <h1>Jadilah <span class="gold-text">Raja</span> di Atas Papan!</h1>
+          <p class="hero-sub">Main catur <b>offline vs komputer</b>, <b>vs teman satu HP</b>, atau <b>online lawan pemain lain</b>. Kumpulkan ⭐, jaga 🔥 streak, dan panjat rank dari <b>Bronze</b> sampai <b>Master</b>!</p>
+          <div class="hero-cta">
+            <button class="btn btn-gold btn-lg" id="btn-quick-ai">⚡ Main Cepat vs Komputer</button>
+            <button class="btn btn-outline btn-lg" id="btn-quick-online">🌐 Main Online</button>
+          </div>
+          <div class="rank-ladder" id="rank-ladder"></div>
+        </div>
+        <div class="hero-board">
+          <div class="mini-board" id="mini-board" aria-hidden="true"></div>
+          <div class="hero-card-float f1">🔥 Streak <b id="hero-streak">0</b></div>
+          <div class="hero-card-float f2">⭐ <b id="hero-stars">0</b> Bintang</div>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card rank-card">
+          <div class="stat-label">Rank Saya</div>
+          <div class="stat-rank" id="stat-rank"></div>
+          <div class="star-progress" id="star-progress"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🔥 Streak Menang</div>
+          <div class="stat-value" id="stat-streak">0</div>
+          <div class="stat-foot">Terbaik: <b id="stat-best-streak">0</b></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⚔️ Rekor (M / S / K)</div>
+          <div class="stat-value wdl"><span class="w" id="stat-wins">0</span> / <span class="d" id="stat-draws">0</span> / <span class="l" id="stat-losses">0</span></div>
+          <div class="stat-foot"><span id="stat-games">0</span> permainan</div>
+        </div>
+        <div class="stat-card clickable" id="stat-global-card" title="Lihat rank global">
+          <div class="stat-label">🌍 Peringkat Global</div>
+          <div class="stat-value gold-text" id="stat-global">#–</div>
+          <div class="stat-foot">Ketuk untuk leaderboard →</div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Pilih Mode Permainan</h2>
+      <div class="modes-grid">
+        <article class="mode-card" data-mode="ai" tabindex="0">
+          <div class="mode-icon">🤖</div>
+          <h3>Vs Komputer</h3>
+          <p>Offline. Lawan AI 3 level: Mudah, Sedang, Sulit.</p>
+          <span class="mode-tag off">📴 OFFLINE</span>
+        </article>
+        <article class="mode-card" data-mode="local" tabindex="0">
+          <div class="mode-icon">👥</div>
+          <h3>Vs Teman</h3>
+          <p>Offline. Main berdua di satu HP / layar.</p>
+          <span class="mode-tag off">📴 OFFLINE</span>
+        </article>
+        <article class="mode-card" data-mode="online" tabindex="0">
+          <div class="mode-icon">🌐</div>
+          <h3>Online</h3>
+          <p>Buat room &amp; bagikan kode, atau gabung room teman.</p>
+          <span class="mode-tag on">📶 ONLINE</span>
+        </article>
+      </div>
+
+      <div id="mode-config" class="config-panel" hidden></div>
+
+      <div class="panel recent-panel" id="recent-panel" hidden>
+        <h3>🕘 Permainan Terakhir</h3>
+        <div id="recent-list" class="recent-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ LOBBY ONLINE ============ -->
+    <section id="screen-lobby" hidden>
+      <div class="lobby-grid">
+        <div class="panel lobby-main">
+          <h2>🌐 Lobby Online</h2>
+          <div class="room-code-box">
+            <div class="room-code-label">KODE ROOM</div>
+            <div class="room-code" id="lobby-code">------</div>
+            <div class="room-code-actions">
+              <button class="btn btn-outline btn-sm" id="btn-copy-code">📋 Salin</button>
+              <button class="btn btn-outline btn-sm" id="btn-share-code">💬 Bagikan</button>
+            </div>
+          </div>
+          <div class="lobby-players">
+            <div class="lobby-player" id="lobby-host"></div>
+            <div class="lobby-vs">VS</div>
+            <div class="lobby-player" id="lobby-guest"></div>
+          </div>
+          <div class="lobby-config" id="lobby-config"></div>
+          <div class="lobby-status" id="lobby-status">Menunggu lawan bergabung…</div>
+          <div class="lobby-actions">
+            <button class="btn btn-gold btn-lg" id="btn-lobby-start" disabled>▶ Mulai Pertandingan</button>
+            <button class="btn btn-danger-ghost" id="btn-lobby-leave">✕ Keluar Room</button>
+          </div>
+        </div>
+        <div class="panel lobby-chat">
+          <h3>💬 Chat Lobby</h3>
+          <div class="chat-messages" id="lobby-chat-messages"></div>
+          <form class="chat-form" id="lobby-chat-form">
+            <input id="lobby-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
+            <button type="submit" class="btn btn-gold btn-sm">➤</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" hidden>
+      <div class="game-layout">
+        <div class="board-col">
+          <div class="player-bar" id="player-top"></div>
+          <div class="board-frame">
+            <div id="board" class="board theme-wood"></div>
+          </div>
+          <div class="player-bar" id="player-bottom"></div>
+          <div class="game-status" id="game-status">Memuat…</div>
+        </div>
+        <aside class="side-col">
+          <div class="panel moves-panel">
+            <div class="moves-head">
+              <h3>📝 Notasi Langkah</h3>
+              <span class="material-chip" id="material-chip" hidden></span>
+            </div>
+            <ol id="moves-list" class="moves-list"><li class="moves-empty">Belum ada langkah.</li></ol>
+          </div>
+          <div class="panel controls-panel">
+            <h3>🎮 Kontrol</h3>
+            <div class="controls-grid">
+              <button class="btn btn-outline btn-sm" id="btn-flip">🔄 Balik Papan</button>
+              <button class="btn btn-outline btn-sm" id="btn-draw">🤝 Remis <span id="draw-badge" class="badge" hidden>1</span></button>
+              <button class="btn btn-danger btn-sm" id="btn-resign">🏳️ Menyerah</button>
+              <button class="btn btn-outline btn-sm" id="btn-newgame">➕ Game Baru</button>
+              <button class="btn btn-ghost btn-sm" id="btn-tomenu">🏠 Menu Utama</button>
+            </div>
+          </div>
+          <div class="panel chat-panel" id="panel-chat" hidden>
+            <h3>💬 Chat Lawan <span id="chat-badge" class="badge" hidden>0</span></h3>
+            <div class="chat-messages" id="game-chat-messages"></div>
+            <form class="chat-form" id="game-chat-form">
+              <input id="game-chat-input" maxlength="200" placeholder="Tulis pesan…" autocomplete="off" />
+              <button type="submit" class="btn btn-gold btn-sm">➤</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span>© 2026 <b>TheofKing</b> 👑 — Mainkan dengan sportivitas!</span>
+      <span class="footer-credits">Bidak: Cburnett (CC BY-SA 3.0) • Mesin: chess.js • Net: PeerJS</span>
+    </div>
+  </footer>
+
+  <!-- ============ ONBOARDING ============ -->
+  <div class="modal-backdrop show" id="modal-onboarding" hidden>
+    <div class="modal modal-profile">
+      <div class="modal-crown">👑</div>
+      <h2>Selamat Datang di <span class="gold-text">TheofKing</span>!</h2>
+      <p class="muted">Sebelum bermain, isi profil kamu dulu ya. Nama &amp; username <b>wajib</b>, foto profil boleh dilewati.</p>
+      <div class="avatar-section">
+        <div class="avatar-preview" id="ob-avatar-preview">?</div>
+        <div class="avatar-presets" id="ob-avatar-presets"></div>
+        <div class="avatar-row">
+          <label class="btn btn-outline btn-sm file-label">📷 Upload Foto
+            <input type="file" id="ob-avatar-upload" accept="image/*" hidden />
+          </label>
+          <button class="btn btn-ghost btn-sm" id="ob-avatar-skip">Lewati (pakai inisial)</button>
+        </div>
+      </div>
+      <label class="field">Nama Lengkap <span class="req">*</span>
+        <input id="ob-name" maxlength="30" placeholder="cth: Theo Alexander" autocomplete="name" />
+      </label>
+      <label class="field">Username <span class="req">*</span>
+        <input id="ob-username" maxlength="16" placeholder="cth: theo_king (3–16 karakter)" autocomplete="username" />
+      </label>
+      <div class="form-error" id="ob-error" hidden></div>
+      <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🚀 Mulai Bermain</button>
+    </div>
+  </div>
+
+  <!-- ============ EDIT PROFILE ============ -->
+  <div class="modal-backdrop" id="modal-profile" hidden>
+    <div class="modal modal-profile">
+      <button class="modal-x" data-close="modal-profile">✕</button>
+      <h2>👤 Profil Saya</h2>
+      <div class="avatar-section">
+        <div class="avatar-preview" id="pf-avatar-preview">?</div>
+        <div class="avatar-presets" id="pf-avatar-presets"></div>
+        <div class="avatar-row">
+          <label class="btn btn-outline btn-sm file-label">📷 Upload Foto
+            <input type="file" id="pf-avatar-upload" accept="image/*" hidden />
+          </label>
+          <button class="btn btn-ghost btn-sm" id="pf-avatar-skip">Pakai inisial</button>
+        </div>
+      </div>
+      <label class="field">Nama Lengkap <span class="req">*</span>
+        <input id="pf-name" maxlength="30" />
+      </label>
+      <label class="field">Username <span class="req">*</span>
+        <input id="pf-username" maxlength="16" />
+      </label>
+      <div class="form-error" id="pf-error" hidden></div>
+      <div class="profile-stats" id="profile-stats"></div>
+      <button class="btn btn-gold btn-lg btn-block" id="pf-save">💾 Simpan Profil</button>
+      <button class="btn btn-danger-ghost btn-block" id="pf-reset">🗑️ Hapus Semua Data Saya</button>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <div class="modal-backdrop" id="modal-leaderboard" hidden>
+    <div class="modal modal-wide">
+      <button class="modal-x" data-close="modal-leaderboard">✕</button>
+      <h2>🏆 Rank Global</h2>
+      <p class="muted">Papan peringkat pemain TheofKing di perangkat ini.</p>
+      <div class="tabs">
+        <button class="tab active" data-lbtab="stars">⭐ Bintang</button>
+        <button class="tab" data-lbtab="streak">🔥 Streak</button>
+      </div>
+      <div class="lb-list" id="lb-list"></div>
+      <div class="lb-me" id="lb-me"></div>
+    </div>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div class="modal-backdrop" id="modal-result" hidden>
+    <div class="modal modal-result">
+      <div class="result-trophy" id="result-trophy">🏆</div>
+      <h2 id="result-title">Kamu Menang!</h2>
+      <p class="muted" id="result-reason"></p>
+      <div class="result-stars" id="result-stars"></div>
+      <div class="result-rank" id="result-rank"></div>
+      <div class="result-streak" id="result-streak"></div>
+      <div class="result-actions">
+        <button class="btn btn-gold btn-lg" id="btn-result-rematch">⚔️ Rematch</button>
+        <button class="btn btn-outline btn-lg" id="btn-result-menu">🏠 Menu</button>
+      </div>
+      <p class="muted small" id="result-wait" hidden>Menunggu jawaban lawan…</p>
+    </div>
+  </div>
+
+  <!-- ============ HELP ============ -->
+  <div class="modal-backdrop" id="modal-help" hidden>
+    <div class="modal modal-wide modal-scroll">
+      <button class="modal-x" data-close="modal-help">✕</button>
+      <h2>❓ Cara Bermain</h2>
+      <div class="help-grid">
+        <div class="help-block">
+          <h3>♟️ Gerakan Bidak</h3>
+          <ul>
+            <li><b>Pion:</b> maju 1 (2 dari posisi awal), makan menyerong, bisa promosi.</li>
+            <li><b>Kuda:</b> melompat bentuk “L”.</li>
+            <li><b>Gajah:</b> diagonal jauh.</li>
+            <li><b>Benteng:</b> lurus jauh.</li>
+            <li><b>Menteri:</b> lurus + diagonal jauh.</li>
+            <li><b>Raja:</b> 1 kotak ke segala arah + rokade.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>⭐ Sistem Rank &amp; Bintang</h3>
+          <ul>
+            <li>Menang = <b>+1 ⭐</b>, Kalah = <b>−1 ⭐</b>, Seri = tetap.</li>
+            <li>Setiap <b>5 kemenangan</b> (5 ⭐) naik 1 rank.</li>
+            <li>Urutan: 🥉 Bronze → 🥈 Silver → 🥇 Gold → 🔮 Mythic → 👑 King → ♛ Master.</li>
+            <li>Menangkan beruntun untuk 🔥 <b>streak</b>! Kalah membuat streak kembali 0.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>🌐 Main Online</h3>
+          <ul>
+            <li>Pilih <b>Online → Buat Room</b>, lalu bagikan <b>kode 6 digit</b> ke teman.</li>
+            <li>Teman pilih <b>Gabung Room</b> &amp; memasukkan kode itu.</li>
+            <li>Bisa chat, ajukan remis, dan rematch langsung.</li>
+          </ul>
+        </div>
+        <div class="help-block">
+          <h3>🖱️ Kontrol Papan</h3>
+          <ul>
+            <li><b>Klik/ketuk</b> bidak lalu kotak tujuan, atau <b>seret (drag)</b> bidaknya.</li>
+            <li>Titik hijau = langkah legal. Kotak merah = raja kena skak.</li>
+            <li>Tersedia jam catur, notasi, dan tombol menyerah/remis.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM ============ -->
+  <div class="modal-backdrop" id="modal-confirm" hidden>
+    <div class="modal modal-small">
+      <h2 id="confirm-title">Yakin?</h2>
+      <p class="muted" id="confirm-message"></p>
+      <div class="result-actions">
+        <button class="btn btn-gold" id="confirm-ok">Ya</button>
+        <button class="btn btn-outline" id="confirm-cancel">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-root" class="toast-root"></div>
+  <canvas id="confetti"></canvas>
+
+  <script src="js/vendor/peerjs.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
