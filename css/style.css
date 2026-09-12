@@ -575,3 +575,12 @@ input { font-family: inherit; }
   .stat-card { padding: 12px; }
   .stat-value { font-size: 1.5rem; }
 }
+
+/* ============================================================
+   Atribut hidden harus selalu menyembunyikan elemen (paling akhir
+   agar menang di semua mesin rendering).
+   ============================================================ */
+[hidden] { display: none !important; }
+.modal-backdrop[hidden],
+.badge[hidden],
+.sq .hint-dot[hidden] { display: none; }
