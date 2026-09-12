@@ -2,18 +2,18 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=19';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=19';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=19';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML } from './ui.js?v=19';
-import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=19';
-import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=19';
-import { Game } from './game.js?v=19';
-import { preloadPieces } from './pieces.js?v=19';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=19';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=19';
-import { SKINS, skinById, applySkin } from './skins.js?v=19';
-import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=19';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=20';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=20';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=20';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash, nickHTML } from './ui.js?v=20';
+import { Net, peerErrorMessage, arenaCodeFor, ARENA_BUCKET_MS } from './net.js?v=20';
+import { Server, isServerOnline, isServerReadonly, setServerReadonly, checkServer, openMatchSocket } from './server.js?v=20';
+import { Game } from './game.js?v=20';
+import { preloadPieces } from './pieces.js?v=20';
+import { AI_LEVELS, AI_NAMES, chooseMove } from './ai.js?v=20';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=20';
+import { SKINS, skinById, applySkin } from './skins.js?v=20';
+import { BORDERS, AVATARS, NICKFX, borderById, avatarById, avatarImg, nickFxById } from './cosmetics.js?v=20';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -1530,6 +1530,7 @@ async function submitAdminLogin() {
 }
 
 function openAdminPanel() {
+  paintCheat();
   if (!isAdmin) { openAdminLogin(); return; }
   if (!currentProfile()) {
     closeModal('modal-admin');
@@ -1701,9 +1702,187 @@ async function applyAdminLikes(mode) {
   toast(mode === 'set' ? `Suka @${t.username} jadi ${st.likes}! 🎯` : `+${n} ❤️ untuk @${t.username}!`, 'success');
 }
 
+// ------------------------- cheat admin -------------------------
+const cheat = { enabled: false, auto: false, hint: false, level: 'medium', lastFen: '', lastHint: null };
+let cheatTimer = null;
+
+function loadCheatPrefs() {
+  try {
+    const o = JSON.parse(localStorage.getItem('tok.v1.cheat') || '{}');
+    if (o && o.level) cheat.level = o.level;
+    return o || {};
+  } catch { return {}; }
+}
+function saveCheatPrefs() {
+  try {
+    const fab = document.getElementById('cheat-fab');
+    localStorage.setItem('tok.v1.cheat', JSON.stringify({
+      level: cheat.level,
+      x: fab.style.left || '', y: fab.style.top || '',
+    }));
+  } catch { /* abaikan */ }
+}
+function placeCheatFab() {
+  const fab = document.getElementById('cheat-fab');
+  const o = loadCheatPrefs();
+  if (o && o.x && o.y) {
+    fab.style.left = o.x; fab.style.top = o.y;
+    fab.style.right = 'auto'; fab.style.bottom = 'auto';
+  }
+  const lv = document.getElementById('cheat-level');
+  if (lv) lv.value = cheat.level;
+}
+
+function setCheatEnabled(on) {
+  cheat.enabled = !!on && isAdmin;
+  if (!cheat.enabled) {
+    cheat.auto = false; cheat.hint = false; cheat.lastFen = '';
+    clearCheatArrow();
+    closeModal('modal-cheat');
+  }
+  document.getElementById('cheat-fab').hidden = !cheat.enabled;
+  paintCheat();
+  ensureCheatTimer();
+}
+
+function paintCheat() {
+  const t = document.getElementById('adm-cheat-toggle');
+  if (t) {
+    t.textContent = cheat.enabled ? 'MATIKAN Tombol Cheat' : 'Aktifkan Tombol Cheat';
+    t.classList.toggle('btn-gold', cheat.enabled);
+    t.classList.toggle('btn-outline', !cheat.enabled);
+  }
+  const au = document.getElementById('cheat-auto');
+  if (au) {
+    au.textContent = cheat.auto ? 'Nyala' : 'Mati';
+    au.classList.toggle('btn-gold', cheat.auto);
+    au.classList.toggle('btn-outline', !cheat.auto);
+  }
+  const h = document.getElementById('cheat-hint');
+  if (h) {
+    h.textContent = cheat.hint ? 'Nyala' : 'Mati';
+    h.classList.toggle('btn-gold', cheat.hint);
+    h.classList.toggle('btn-outline', !cheat.hint);
+  }
+}
+
+function ensureCheatTimer() {
+  if (cheatTimer) return;
+  cheatTimer = setInterval(cheatTick, 750);
+  if (cheatTimer && cheatTimer.unref) cheatTimer.unref();
+}
+
+function cheatTick() {
+  if (!cheat.enabled || !isAdmin) return;
+  const active = game && game.running && !game.finished && screen === 'game' && game.chess;
+  if (cheat.auto && active) {
+    try {
+      const t = game.turn();
+      if (game.canAct(t)) {
+        const mv = chooseMove(game.chess.fen(), cheat.level);
+        if (mv) game.userMove(mv.from, mv.to, mv.promotion);
+      }
+    } catch { /* abaikan */ }
+  }
+  if (cheat.hint && active) {
+    try {
+      const fen = game.chess.fen();
+      if (fen !== cheat.lastFen) { cheat.lastFen = fen; cheat.lastHint = chooseMove(fen, 'hard'); }
+      drawCheatArrow(cheat.lastHint);
+    } catch { /* abaikan */ }
+  } else {
+    cheat.lastFen = '';
+    clearCheatArrow();
+  }
+  paintCheatStatus();
+}
+
+function paintCheatStatus() {
+  const el = document.getElementById('cheat-status');
+  if (!el || document.getElementById('modal-cheat').hidden) return;
+  if (!game || !game.running || game.finished) { el.textContent = 'Tidak ada game berjalan.'; return; }
+  const t = game.turn() === 'w' ? 'Putih' : 'Hitam';
+  const mv = cheat.lastHint;
+  el.textContent = 'Giliran: ' + t + (mv ? ' | Saran: ' + mv.from + ' ke ' + mv.to : '');
+}
+
+function drawCheatArrow(mv) {
+  const board = document.getElementById('board');
+  if (!board || !mv) { clearCheatArrow(); return; }
+  const a = board.querySelector('[data-sq="' + mv.from + '"]');
+  const q = board.querySelector('[data-sq="' + mv.to + '"]');
+  if (!a || !q) { clearCheatArrow(); return; }
+  let svg = document.getElementById('cheat-arrow');
+  if (!svg || svg.parentNode !== board) {
+    clearCheatArrow();
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'cheat-arrow';
+    board.appendChild(svg);
+  }
+  svg.dataset.from = mv.from;
+  svg.dataset.to = mv.to;
+  const br = board.getBoundingClientRect();
+  const ar = a.getBoundingClientRect();
+  const dr = q.getBoundingClientRect();
+  const x1 = ar.left + ar.width / 2 - br.left, y1 = ar.top + ar.height / 2 - br.top;
+  const x2 = dr.left + dr.width / 2 - br.left, y2 = dr.top + dr.height / 2 - br.top;
+  const ang = Math.atan2(y2 - y1, x2 - x1);
+  const L = Math.max(1, Math.hypot(x2 - x1, y2 - y1));
+  const shorten = Math.min(ar.width * 0.28, L * 0.3);
+  const ex = x2 - Math.cos(ang) * shorten, ey = y2 - Math.sin(ang) * shorten;
+  const hs = Math.max(6, ar.width * 0.22);
+  const p1 = (ex + hs * Math.cos(ang + 2.5)) + ',' + (ey + hs * Math.sin(ang + 2.5));
+  const p2 = (ex + hs * Math.cos(ang - 2.5)) + ',' + (ey + hs * Math.sin(ang - 2.5));
+  svg.setAttribute('viewBox', '0 0 ' + Math.max(1, br.width) + ' ' + Math.max(1, br.height));
+  svg.innerHTML = '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + ex + '" y2="' + ey + '" /><polygon points="' + x2 + ',' + y2 + ' ' + p1 + ' ' + p2 + '" />';
+}
+
+function clearCheatArrow() {
+  const el = document.getElementById('cheat-arrow');
+  if (el) el.remove();
+  cheat.lastHint = null;
+}
+
+function initCheatFab() {
+  const fab = document.getElementById('cheat-fab');
+  placeCheatFab();
+  let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false, moved = 0;
+  const down = (cx, cy) => {
+    dragging = true; moved = 0;
+    const r = fab.getBoundingClientRect();
+    sx = cx; sy = cy; ox = r.left; oy = r.top;
+  };
+  const move = (cx, cy) => {
+    if (!dragging) return;
+    moved = Math.max(moved, Math.abs(cx - sx) + Math.abs(cy - sy));
+    const w = fab.offsetWidth || 46, h = fab.offsetHeight || 46;
+    const vw = window.innerWidth || 800, vh = window.innerHeight || 600;
+    fab.style.left = Math.min(Math.max(0, ox + cx - sx), vw - w) + 'px';
+    fab.style.top = Math.min(Math.max(0, oy + cy - sy), vh - h) + 'px';
+    fab.style.right = 'auto'; fab.style.bottom = 'auto';
+  };
+  const up = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (moved < 6) {
+      sfx.click();
+      if (isAdmin && cheat.enabled) { paintCheatStatus(); openModal('modal-cheat'); }
+    } else {
+      saveCheatPrefs();
+    }
+  };
+  fab.addEventListener('mousedown', (e) => { e.preventDefault(); down(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+  window.addEventListener('mouseup', up);
+  fab.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) down(t.clientX, t.clientY); }, { passive: true });
+  fab.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) { move(t.clientX, t.clientY); if (dragging) e.preventDefault(); } }, { passive: false });
+  fab.addEventListener('touchend', up);
+}
+
 function adminLogout() {
   isAdmin = false;
   adminToken = null;
+  setCheatEnabled(false);
   closeModal('modal-admin');
   sfx.click();
   toast('Admin keluar 🔒', 'gold');
@@ -2040,7 +2219,7 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends', 'modal-admin-login', 'modal-admin', 'modal-inbox', 'modal-player', 'modal-match', 'modal-cheat']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
@@ -2063,6 +2242,21 @@ function init() {
   $('#adm-add-like').addEventListener('click', () => applyAdminLikes('add'));
   $('#adm-set-like').addEventListener('click', () => applyAdminLikes('set'));
   $('#adm-logout').addEventListener('click', adminLogout);
+  $('#adm-cheat-toggle').addEventListener('click', () => {
+    sfx.click();
+    setCheatEnabled(!cheat.enabled);
+    toast(cheat.enabled ? 'Tombol cheat aktif! Seret sesukamu.' : 'Tombol cheat mati.', 'gold');
+  });
+  $('#cheat-auto').addEventListener('click', () => { sfx.click(); cheat.auto = !cheat.auto; paintCheat(); });
+  $('#cheat-hint').addEventListener('click', () => {
+    sfx.click();
+    cheat.hint = !cheat.hint;
+    if (!cheat.hint) { clearCheatArrow(); cheat.lastFen = ''; }
+    paintCheat();
+  });
+  $('#cheat-level').addEventListener('change', (ev) => { cheat.level = ev.target.value; saveCheatPrefs(); sfx.click(); });
+  initCheatFab();
+  ensureCheatTimer();
   $('#profile-chip').addEventListener('click', (e) => {
     sfx.click();
     if (!currentProfile()) { openModal('modal-onboarding'); return; }
