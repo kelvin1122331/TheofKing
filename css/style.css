@@ -728,13 +728,8 @@ input { font-family: inherit; }
 /* ============================================================
    SHOP
    ============================================================ */
-.coin-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(245, 192, 68, 0.13); border: 1px solid rgba(245, 192, 68, 0.5);
-  color: var(--gold-2); border-radius: 999px; padding: 8px 15px;
-  font-weight: 800; font-size: 0.9rem;
-}
-.coin-pill:hover { background: rgba(245, 192, 68, 0.22); }
+.profile-chip .pcoins { font-size: 0.72rem; color: var(--gold-2); font-weight: 800; white-space: nowrap; cursor: pointer; }
+.profile-chip .pcoins:hover { text-decoration: underline; }
 .shop-balance {
   text-align: center; font-size: 1.05rem; font-weight: 700;
   background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(245, 192, 68, 0.5);
@@ -789,3 +784,49 @@ input { font-family: inherit; }
 .modal-backdrop[hidden],
 .badge[hidden],
 .sq .hint-dot[hidden] { display: none; }
+
+/* ---------- teman ---------- */
+.icon-btn { position: relative; }
+.count-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--gold); color: #221a08;
+  font-size: 0.62rem; font-weight: 800;
+  min-width: 18px; height: 18px; line-height: 18px; text-align: center;
+  border-radius: 999px; padding: 0 4px;
+}
+.my-id-card {
+  background: rgba(245, 192, 68, 0.08); border: 1px dashed rgba(245, 192, 68, 0.55);
+  border-radius: 13px; padding: 12px 14px; margin-bottom: 14px;
+  display: flex; flex-direction: column; gap: 5px; font-size: 0.95rem;
+}
+.my-id-card b { color: var(--gold); }
+.my-id-btns { display: flex; gap: 8px; margin-top: 4px; }
+.friend-add-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.friend-add-row input {
+  flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--card-border); color: var(--text);
+  border-radius: 10px; padding: 9px 11px; font-size: 0.85rem;
+}
+.friend-add-row input:focus { outline: none; border-color: var(--gold); }
+#fr-id { flex: 0 0 118px; text-transform: uppercase; }
+.friends-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.friend-row {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 8px 10px;
+}
+.friend-ava {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.8rem;
+}
+.friend-info { flex: 1; display: flex; flex-direction: column; line-height: 1.25; overflow: hidden; }
+.friend-info b { font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend-info small { color: var(--muted); font-size: 0.72rem; }
+.friends-empty { text-align: center; color: var(--muted); padding: 18px 8px; font-size: 0.88rem; }
+.id-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 9px 12px; margin: 10px 0; font-size: 0.88rem;
+}
+.id-row b { color: var(--gold); letter-spacing: 0.5px; }

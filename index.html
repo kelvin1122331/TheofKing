@@ -90,7 +90,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=9" />
+  <link rel="stylesheet" href="css/style.css?v=10" />
 </head>
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0e17;color:#f2f4fa;font-family:sans-serif;padding:20px;text-align:center">Aktifkan JavaScript di browser untuk bermain TheofKing. Tanpa JavaScript, semua tombol tidak akan berfungsi.</div></noscript>
@@ -114,10 +114,10 @@
       </a>
       <div class="topbar-actions">
         <button id="btn-sound" class="icon-btn" title="Suara on/off">🔊</button>
-        <button id="btn-theme" class="icon-btn" title="Skin & Shop">🎨</button>
+        <button id="btn-friends" class="icon-btn" title="Teman">👥<span class="count-badge" id="friends-count" hidden>0</span></button>
+        <button id="btn-shop" class="icon-btn" title="Shop (koin & skin)">🛍️</button>
         <button id="btn-leaderboard" class="btn btn-ghost hide-sm">🏆 Rank Global</button>
         <button id="btn-help" class="icon-btn" title="Cara bermain">❓</button>
-        <button id="btn-shop" class="coin-pill" title="Shop (koin & skin)">🪙 <b id="coin-balance">0</b></button>
         <button id="profile-chip" class="profile-chip" title="Profil saya"></button>
       </div>
     </div>
@@ -341,7 +341,8 @@
     <div class="modal modal-profile">
       <div class="modal-crown">👑</div>
       <h2>Selamat Datang di <span class="gold-text">TheofKing</span>!</h2>
-      <p class="muted">Sebelum bermain, isi profil kamu dulu ya. Nama &amp; username <b>wajib</b>, foto profil boleh dilewati.</p>
+      <p class="muted">👋 <b>Masuk dulu yuk!</b> Isi nama, username, negara asal &amp; pilih foto profil — semuanya <b>wajib</b> ya.</p>
+      <div class="field-label">📷 Foto Profil <span class="req">*</span> <span class="muted small">(pilih emoji / upload)</span></div>
       <div class="avatar-section">
         <div class="avatar-preview" id="ob-avatar-preview">?</div>
         <div class="avatar-presets" id="ob-avatar-presets"></div>
@@ -349,7 +350,6 @@
           <label class="btn btn-outline btn-sm file-label">📷 Upload Foto
             <input type="file" id="ob-avatar-upload" accept="image/*" hidden />
           </label>
-          <button class="btn btn-ghost btn-sm" id="ob-avatar-skip">Lewati (pakai inisial)</button>
         </div>
       </div>
       <label class="field">Nama Lengkap <span class="req">*</span>
@@ -358,7 +358,7 @@
       <label class="field">Username <span class="req">*</span>
         <input id="ob-username" maxlength="16" placeholder="cth: theo_king (3–16 karakter)" autocomplete="username" />
       </label>
-      <div class="field-label">🚩 Negara Asal <span class="muted small">(opsional)</span></div>
+      <div class="field-label">🚩 Negara Asal <span class="req">*</span></div>
       <div class="country-picker">
         <button type="button" class="country-btn" id="ob-country-btn"></button>
         <div class="country-drop" id="ob-country-drop" hidden>
@@ -367,7 +367,7 @@
         </div>
       </div>
       <div class="form-error" id="ob-error" hidden></div>
-      <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🚀 Mulai Bermain</button>
+      <button class="btn btn-gold btn-lg btn-block" id="ob-submit">🔑 Masuk & Mulai Bermain</button>
     </div>
   </div>
 
@@ -392,6 +392,7 @@
       <label class="field">Username <span class="req">*</span>
         <input id="pf-username" maxlength="16" />
       </label>
+      <div class="id-row">🆔 ID Pemain: <b id="pf-id">–</b> <button class="btn btn-outline btn-sm" id="pf-copy-id" type="button">📋 Salin</button></div>
       <div class="field-label">🚩 Negara Asal <span class="muted small">(opsional)</span></div>
       <div class="country-picker">
         <button type="button" class="country-btn" id="pf-country-btn"></button>
@@ -404,6 +405,32 @@
       <div class="profile-stats" id="profile-stats"></div>
       <button class="btn btn-gold btn-lg btn-block" id="pf-save">💾 Simpan Profil</button>
       <button class="btn btn-danger-ghost btn-block" id="pf-reset">🗑️ Hapus Semua Data Saya</button>
+    </div>
+  </div>
+
+  <!-- ============ TEMAN ============ -->
+  <div class="modal-backdrop" id="modal-friends" hidden style="display:none">
+    <div class="modal">
+      <button class="modal-x" data-close="modal-friends">✕</button>
+      <h2>👥 Teman</h2>
+      <p class="muted">Bagikan ID kamu ke teman, lalu saling tambahkan di sini.</p>
+      <div class="my-id-card">
+        <div>😎 <b id="fr-my-user">–</b></div>
+        <div>🆔 <b id="fr-my-id">–</b></div>
+        <div class="my-id-btns">
+          <button class="btn btn-outline btn-sm" id="fr-copy-user" type="button">📋 Username</button>
+          <button class="btn btn-outline btn-sm" id="fr-copy-id" type="button">📋 ID</button>
+        </div>
+      </div>
+      <div class="field-label">➕ Tambah Teman</div>
+      <div class="friend-add-row">
+        <input id="fr-username" maxlength="16" placeholder="Username teman" autocomplete="off" />
+        <input id="fr-id" maxlength="9" placeholder="TK-XXXXXX" autocomplete="off" />
+        <button class="btn btn-gold btn-sm" id="fr-add" type="button">➕ Tambah</button>
+      </div>
+      <div class="form-error" id="fr-error" hidden></div>
+      <div class="field-label">📋 Daftar Teman (<span id="fr-count">0</span>)</div>
+      <div class="friends-list" id="friends-list"></div>
     </div>
   </div>
 
@@ -500,7 +527,7 @@
   <div id="toast-root" class="toast-root"></div>
   <canvas id="confetti"></canvas>
 
-  <script src="js/vendor/peerjs.min.js?v=9"></script>
-  <script type="module" src="js/app.js?v=9"></script>
+  <script src="js/vendor/peerjs.min.js?v=10"></script>
+  <script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>

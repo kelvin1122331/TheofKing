@@ -1,7 +1,7 @@
 // ============================================================
 // Efek suara hasil sintesis WebAudio (tanpa file audio).
 // ============================================================
-import { store } from './store.js?v=9';
+import { store } from './store.js?v=10';
 
 let ctx = null;
 let noiseBuf = null;

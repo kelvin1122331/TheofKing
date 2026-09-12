@@ -2,7 +2,7 @@
 // Penyimpanan lokal (localStorage): profil, statistik, setting,
 // leaderboard, dan riwayat permainan.
 // ============================================================
-import { rankForStars } from './ranks.js?v=9';
+import { rankForStars } from './ranks.js?v=10';
 
 const PREFIX = 'tok.v1.';
 
@@ -49,6 +49,9 @@ export const store = {
 
   get recent() { return read('recent', []); },
   set recent(v) { write('recent', v); },
+
+  get friends() { return read('friends', []); },
+  set friends(v) { write('friends', v); },
 
   get seeds() { return read('seeds', null); },
   set seeds(v) { write('seeds', v); },
@@ -171,4 +174,44 @@ export function validateProfile(name, username) {
     return { ok: false, field: 'username', message: 'Username 3–16 karakter (huruf, angka, _).' };
   }
   return { ok: true, name, username };
+}
+
+const ID_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export function makePlayerId() {
+  let rnd;
+  try {
+    rnd = [...crypto.getRandomValues(new Uint8Array(6))];
+  } catch {
+    rnd = Array.from({ length: 6 }, () => Math.floor(Math.random() * 256));
+  }
+  return 'TK-' + rnd.map((n) => ID_ALPHABET[n % ID_ALPHABET.length]).join('');
+}
+
+export function normalizeFriendId(id) {
+  return String(id || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+export function addFriend(username, id, selfId) {
+  username = String(username || '').trim().replace(/^@/, '');
+  id = normalizeFriendId(id);
+  if (!/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
+    return { ok: false, message: 'Username teman 3–16 karakter (huruf, angka, _).' };
+  }
+  if (!/^TK-[A-Z2-9]{6}$/.test(id)) {
+    return { ok: false, message: 'Format ID salah. Contoh benar: TK-AB12CD.' };
+  }
+  if (selfId && id === String(selfId).toUpperCase()) {
+    return { ok: false, message: 'Itu ID kamu sendiri 😄' };
+  }
+  const list = store.friends;
+  if (list.some((f) => f.id === id)) {
+    return { ok: false, message: 'Teman ini sudah ada di daftar.' };
+  }
+  list.unshift({ username, id, addedAt: Date.now() });
+  store.friends = list;
+  return { ok: true, username, id };
+}
+
+export function removeFriend(id) {
+  store.friends = store.friends.filter((f) => f.id !== id);
 }

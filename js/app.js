@@ -2,16 +2,16 @@
 // TheofKing — bootstrap aplikasi: onboarding, home, lobby,
 // leaderboard, profil, tema, dan orkestrasi Game + Net.
 // ============================================================
-import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor } from './store.js?v=9';
-import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=9';
-import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=9';
-import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=9';
-import { Net, peerErrorMessage } from './net.js?v=9';
-import { Game } from './game.js?v=9';
-import { preloadPieces } from './pieces.js?v=9';
-import { AI_LEVELS, AI_NAMES } from './ai.js?v=9';
-import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=9';
-import { SKINS, skinById, applySkin } from './skins.js?v=9';
+import { store, saveStats, validateProfile, PRESET_AVATARS, getLeaderboard, myGlobalRank, avatarGradientFor, initialsFor, makePlayerId, addFriend, removeFriend } from './store.js?v=10';
+import { rankForStars, rankProgress, RANKS, STARS_PER_RANK } from './ranks.js?v=10';
+import { sfx, unlockAudio, soundEnabled, setSoundEnabled } from './sound.js?v=10';
+import { $, $$, esc, openModal, closeModal, toast, confirmDialog, initConfirm, copyText, avatarHTML, starRowHTML, renderMiniBoard, fmtTimeAgo, showVsSplash } from './ui.js?v=10';
+import { Net, peerErrorMessage } from './net.js?v=10';
+import { Game } from './game.js?v=10';
+import { preloadPieces } from './pieces.js?v=10';
+import { AI_LEVELS, AI_NAMES } from './ai.js?v=10';
+import { COUNTRIES, countryByCode, flagEmoji, flagFor } from './countries.js?v=10';
+import { SKINS, skinById, applySkin } from './skins.js?v=10';
 
 // Penanda untuk skrip diagnostik boot (lihat index.html)
 window.__TOK_MODULE_OK = true;
@@ -77,16 +77,32 @@ function goMenu() {
 // ------------------------- header & statistik -------------------------
 function currentProfile() { return store.profile; }
 
+function ensureProfileId() {
+  const p = store.profile;
+  if (p && !p.id) {
+    p.id = makePlayerId();
+    store.profile = p;
+  }
+}
+
+function updateFriendsBadge() {
+  const n = store.friends.length;
+  const el = document.getElementById('friends-count');
+  if (!el) return;
+  el.textContent = n > 99 ? '99+' : n;
+  el.hidden = n === 0;
+}
+
 function renderChip() {
   const p = currentProfile();
   const chip = $('#profile-chip');
-  if (!p) { chip.innerHTML = '👤 Masuk'; return; }
+  if (!p) { chip.innerHTML = '👤 Masuk'; updateFriendsBadge(); return; }
   const r = rankForStars(store.stats.stars);
   chip.innerHTML = `${avatarHTML(p, 32)}
     <span class="pinfo"><span class="pname">${flagFor(p) ? flagFor(p) + " " : ""}${esc(p.name)}</span>
-    <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span></span>`;
-  const cb = document.getElementById('coin-balance');
-  if (cb) cb.textContent = store.stats.coins || 0;
+    <span class="prank">${r.icon} ${r.name} • ⭐ ${store.stats.stars}</span>
+    <span class="pcoins" title="Koin — klik untuk buka Shop">🪙 <b id="coin-balance">${store.stats.coins || 0}</b></span></span>`;
+  updateFriendsBadge();
 }
 
 function refreshStats() {
@@ -261,22 +277,18 @@ function initOnboarding() {
   updateAvatarPreview('#ob-avatar-preview');
   $('#ob-name').addEventListener('input', () => updateAvatarPreview('#ob-avatar-preview'));
   $('#ob-avatar-upload').addEventListener('change', (e) => handleAvatarUpload(e.target, '#ob-avatar-preview'));
-  $('#ob-avatar-skip').addEventListener('click', () => {
-    avatarDraft = { type: 'initial', data: null };
-    sfx.click();
-    renderPresetGrid('#ob-avatar-presets', '#ob-avatar-preview');
-    updateAvatarPreview('#ob-avatar-preview');
-  });
   $('#ob-submit').addEventListener('click', () => {
+    const er = $('#ob-error');
+    const fail = (msg) => { er.textContent = msg; er.hidden = false; sfx.illegal(); };
     const v = validateProfile($('#ob-name').value, $('#ob-username').value);
-    if (!v.ok) {
-      const er = $('#ob-error');
-      er.textContent = v.message;
-      er.hidden = false;
-      sfx.illegal();
+    if (!v.ok) { fail(v.message); return; }
+    if (avatarDraft.type !== 'preset' && avatarDraft.type !== 'upload') {
+      fail('Pilih foto profil dulu ya 📷 (emoji / upload).');
       return;
     }
-    store.profile = { name: v.name, username: v.username, avatar: { ...avatarDraft }, country: obPicker.get(), createdAt: Date.now() };
+    if (!obPicker.get()) { fail('Pilih negara asal kamu dulu ya 🚩'); return; }
+    er.hidden = true;
+    store.profile = { name: v.name, username: v.username, avatar: { ...avatarDraft }, country: obPicker.get(), id: makePlayerId(), createdAt: Date.now() };
     closeModal('modal-onboarding');
     sfx.start();
     toast(`Selamat datang, ${v.name}! 👑`, 'gold');
@@ -285,8 +297,10 @@ function initOnboarding() {
 }
 
 function openProfileModal() {
+  ensureProfileId();
   const p = currentProfile();
   if (!p) return;
+  document.getElementById('pf-id').textContent = p.id || '–';
   avatarDraft = { ...(p.avatar || { type: 'initial', data: null }) };
   renderPresetGrid('#pf-avatar-presets', '#pf-avatar-preview');
   $('#pf-name').value = p.name;
@@ -328,6 +342,10 @@ function initProfileModal() {
     sfx.notify();
     toast('Profil disimpan! 💾', 'success');
     refreshStats();
+  });
+  $('#pf-copy-id').addEventListener('click', async () => {
+    sfx.click();
+    if (await copyText(currentProfile()?.id || '')) toast('ID disalin! 📋', 'success');
   });
   $('#pf-reset').addEventListener('click', async () => {
     const ok = await confirmDialog({
@@ -825,6 +843,44 @@ function initLobby() {
   });
 }
 
+// ------------------------- teman -------------------------
+function openFriends() {
+  if (!currentProfile()) { openModal('modal-onboarding'); return; }
+  ensureProfileId();
+  renderFriends();
+  openModal('modal-friends');
+}
+
+function renderFriends() {
+  const p = currentProfile() || {};
+  document.getElementById('fr-my-user').textContent = p.username ? '@' + p.username : '–';
+  document.getElementById('fr-my-id').textContent = p.id || '–';
+  const list = store.friends;
+  document.getElementById('fr-count').textContent = list.length;
+  const box = document.getElementById('friends-list');
+  box.innerHTML = list.length ? list.map((f) => `
+    <div class="friend-row">
+      <span class="friend-ava" style="background:${avatarGradientFor(f.username)}">${esc(initialsFor(f.username))}</span>
+      <span class="friend-info"><b>@${esc(f.username)}</b><small>🆔 ${esc(f.id)}</small></span>
+      <button class="btn btn-outline btn-sm" data-fr-copy="${esc(f.id)}" type="button">📋</button>
+      <button class="btn btn-danger-ghost btn-sm" data-fr-del="${esc(f.id)}" type="button">✕</button>
+    </div>`).join('')
+    : '<div class="friends-empty">Belum ada teman. Tambahkan lewat username + ID di atas 👆</div>';
+  updateFriendsBadge();
+}
+
+function submitAddFriend() {
+  const er = document.getElementById('fr-error');
+  const r = addFriend(document.getElementById('fr-username').value, document.getElementById('fr-id').value, currentProfile()?.id);
+  if (!r.ok) { er.textContent = r.message; er.hidden = false; sfx.illegal(); return; }
+  er.hidden = true;
+  document.getElementById('fr-username').value = '';
+  document.getElementById('fr-id').value = '';
+  sfx.buy();
+  toast(`@${r.username} jadi temanmu! 👥`, 'success');
+  renderFriends();
+}
+
 // ------------------------- skin & shop -------------------------
 function applyEquippedSkin() {
   applySkin(document.getElementById('board'), store.settings.skin || 'wood');
@@ -963,18 +1019,38 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     { const a = obPicker ? obPicker.close() : false; const d2 = pfPicker ? pfPicker.close() : false; if (a || d2) return; }
-    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop']) {
+    for (const id of ['modal-help', 'modal-leaderboard', 'modal-profile', 'modal-shop', 'modal-friends']) {
       if (!document.getElementById(id).hidden) { closeModal(id); break; }
     }
   });
 
   // topbar
   $('#brand-home').addEventListener('click', (e) => { e.preventDefault(); sfx.click(); if (screen !== 'home') goMenu(); else window.scrollTo({ top: 0, behavior: 'smooth' }); });
-  $('#profile-chip').addEventListener('click', () => { sfx.click(); openProfileModal(); });
+  $('#profile-chip').addEventListener('click', (e) => {
+    sfx.click();
+    if (!currentProfile()) { openModal('modal-onboarding'); return; }
+    if (e.target.closest('.pcoins')) { openShop(); return; }
+    openProfileModal();
+  });
   $('#btn-leaderboard').addEventListener('click', openLeaderboard);
   $('#btn-help').addEventListener('click', () => { sfx.click(); openModal('modal-help'); });
-  $('#btn-theme').addEventListener('click', () => { sfx.click(); openShop(); });
   $('#btn-shop').addEventListener('click', () => { sfx.click(); openShop(); });
+  $('#btn-friends').addEventListener('click', () => { sfx.click(); openFriends(); });
+  $('#fr-add').addEventListener('click', submitAddFriend);
+  $('#fr-copy-user').addEventListener('click', async () => { sfx.click(); if (await copyText(currentProfile()?.username || '')) toast('Username disalin! 📋', 'success'); });
+  $('#fr-copy-id').addEventListener('click', async () => { sfx.click(); if (await copyText(currentProfile()?.id || '')) toast('ID disalin! 📋', 'success'); });
+  $('#friends-list').addEventListener('click', async (e) => {
+    const del = e.target.closest('[data-fr-del]');
+    const cp = e.target.closest('[data-fr-copy]');
+    if (del) {
+      removeFriend(del.dataset.frDel);
+      sfx.click();
+      toast('Teman dihapus.', 'gold');
+      renderFriends();
+    } else if (cp) {
+      if (await copyText(cp.dataset.frCopy)) toast('ID teman disalin! 📋', 'success');
+    }
+  });
   $('#stat-coins-card').addEventListener('click', () => { sfx.click(); openShop(); });
   const sndBtn = $('#btn-sound');
   const paintSnd = () => { sndBtn.textContent = soundEnabled() ? '🔊' : '🔇'; };
@@ -1013,6 +1089,7 @@ function init() {
     if (game && game.cfg.mode === 'online' && !game.finished) e.preventDefault();
   });
 
+  ensureProfileId();
   refreshStats();
 
   // wajib isi profil saat pertama masuk
